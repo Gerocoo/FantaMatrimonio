@@ -68,7 +68,7 @@
         </div>
       </div>
     {% else %}
-      <!-- Pulsanti per utenti non loggati -->
+    
       <div style="display:flex;gap:1rem;">
         <a href="{{ url_for('login') }}" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; margin: 0;">Login</a>
         <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.5rem 1.5rem; margin: 0;">Registrati</a>
@@ -76,7 +76,7 @@
     {% endif %}
   </nav>
 
-  <!-- Flash Messages -->
+  
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
@@ -87,20 +87,21 @@
     {% endif %}
   {% endwith %}
 
-  <!-- Main Content -->
+ 
   {% block content %}{% endblock %}
 
-  <!-- Footer -->
+  
   <footer style="background: var(--card); border-top: 1px solid var(--border); padding: 2rem; text-align: center; margin-top: 4rem;">
-    <p style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">
-      FantaMatrimonio
-    </p>
-    <p style="font-size: 0.9rem; opacity: 0.7;">
-      &copy; 2025 FantaMatrimonio. Tutti i diritti riservati.
-    </p>
-  </footer>
+  <p style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">
+    FantaMatrimonio
+  </p>
+  <p style="font-size: 0.9rem; opacity: 0.7;">
+    &copy; 2025 FantaMatrimonio. Tutti i diritti riservati.<br>
+    <a href="{{ url_for('privacy_policy') }}" style="color: var(--primary); text-decoration: underline;">Norme sulla privacy</a>
+  </p>
+</footer>
 
-  <!-- JavaScript per dropdown menu -->
+  
   <script>
     function toggleDropdown() {
       var menu = document.getElementById("menuDropdown");
@@ -109,7 +110,7 @@
       }
     }
 
-    // Chiude il menu se clicchi fuori
+    
     window.onclick = function(event) {
       if (!event.target.closest("#profileDropdown")) {
         var menu = document.getElementById("menuDropdown");
@@ -119,7 +120,7 @@
       }
     }
 
-    // Previene la chiusura se clicchi dentro il menu
+    
     document.addEventListener('DOMContentLoaded', function() {
       var menu = document.getElementById("menuDropdown");
       if (menu) {
@@ -129,10 +130,7 @@
       }
     });
 function handleCredentialResponse(response) {
-    // Qui ricevi il token ID di Google
     console.log("ID token:", response.credential);
-    
-    // Puoi inviarlo al server per validazione e login
     fetch('/google_login_token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,7 +153,7 @@ window.onload = function () {
         callback: handleCredentialResponse
     });
 
-    // Mostra il pulsante di login
+    
     google.accounts.id.renderButton(
         document.getElementById("googleSignInDiv"), 
         { theme: "outline", size: "large" }  // personalizzazione pulsante

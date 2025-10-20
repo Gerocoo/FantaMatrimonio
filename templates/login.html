@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Login - FantaMatrimonio{% endblock %}
 {% block content %}
+<p style="font-size: 0.9rem; text-align:center; margin-top:2rem;">
+  Continuando dichiari di avere letto e accettato le
+  <a href="{{ url_for('privacy_policy') }}" target="_blank" style="color: var(--primary); text-decoration: underline;">Norme sulla privacy</a>.
+</p>
 <form method="post">
   <h2>Login</h2>
   <input type="text" name="username" placeholder="Username" required />

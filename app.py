@@ -35,7 +35,7 @@ db = SQLAlchemy(app)
 google_bp = make_google_blueprint(
     client_id="TUO_CLIENT_ID",
     client_secret="TUO_CLIENT_SECRET",
-    redirect_url="https://www.therealfantamatrimonio.it/login/google/authorized",
+    redirect_url="https://therealfantamatrimonio.it/login/google/authorized",
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
 )
 app.register_blueprint(google_bp, url_prefix="/login")
@@ -560,7 +560,9 @@ def upload_avatar():
     else:
         flash("Formato file non valido. Usa PNG, JPG, JPEG, GIF o WEBP", "danger")
         return redirect(url_for("dashboard"))
-
+@app.route("/privacy")
+def privacy_policy():
+    return render_template("privacy_policy.html")
 
 if __name__ == "__main__":
     with app.app_context():
