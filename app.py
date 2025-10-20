@@ -52,7 +52,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 google_bp = make_google_blueprint(
     client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
     client_secret="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",
-    redirect_url="https://therealfantamatrimonio.it/login/google/authorized",
+    redirect_to="google_login", 
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
 )
 app.register_blueprint(google_bp, url_prefix="/login")
