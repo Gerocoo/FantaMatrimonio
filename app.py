@@ -13,9 +13,7 @@ from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 from flask_mail import Mail, Message
-
-
-
+import logging
 
 try:
     from PIL import Image, ImageDraw
@@ -43,7 +41,7 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'register@therealfantamatrimonio.it'
 app.config['MAIL_PASSWORD'] = 'Aeiou123aeiou@@!suca'
 mail = Mail(app)
-app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 
@@ -217,7 +215,6 @@ def register():
                 db.session.add(user)
                 db.session.commit()
                 link = url_for('confirm_email', token=token, _external=True)
-                # INVIA LA MAIL (debug)
                 msg = Message("Conferma la tua email FantaMatrimonio",
                               sender=app.config['MAIL_USERNAME'],
                               recipients=[email])
@@ -601,11 +598,17 @@ def upload_avatar():
 def privacy_policy():
     return render_template("privacy_policy.html")
 
-@app.errorhandler(Exception)
-def handle_exception(e):
-    import traceback
-    traceback.print_exc()
-    return f"Errore interno: {str(e)}", 500
+@app.route("/send-test-mail")
+def send_test_mail():
+    try:
+        msg = Message("Test email da FantaMatrimonio",
+                      sender=app.config['MAIL_USERNAME'],
+                      recipients=["gerocoo16@gmail.com"])
+        msg.body = "Test invio email riuscito!"
+        mail.send(msg)
+        return "Email inviata con successo!"
+    except Exception as e:
+        return f"Errore invio email: {str(e)}"
 
 if __name__ == "__main__":
     with app.app_context():
