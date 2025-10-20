@@ -33,10 +33,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 google_bp = make_google_blueprint(
-    client_id="TUO_CLIENT_ID",
-    client_secret="TUO_CLIENT_SECRET",
+    client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
+    client_secret="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",
     redirect_url="https://therealfantamatrimonio.it/login/google/authorized",
-    scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
+    cope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
@@ -507,7 +507,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max
 
-# Crea cartella upload se non esiste
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
@@ -535,15 +534,11 @@ def upload_avatar():
         ext = filename.rsplit('.', 1)[1].lower()
         unique_filename = f"user_{session['user_id']}_{secrets.token_hex(8)}.{ext}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        
-        # Salva file
         file.save(filepath)
         
-        # Aggiorna database
         user = User.query.get(session['user_id'])
         old_avatar = user.avatar
-        
-        # Elimina vecchio avatar se non è default
+
         if old_avatar and old_avatar != 'default.png' and not old_avatar.startswith('http'):
             old_path = os.path.join('static', old_avatar)
             if os.path.exists(old_path):
@@ -551,8 +546,6 @@ def upload_avatar():
         
         user.avatar = f"uploads/avatars/{unique_filename}"
         db.session.commit()
-        
-        # Aggiorna sessione
         session['avatar'] = user.avatar
         
         flash("Avatar aggiornato con successo!", "success")
