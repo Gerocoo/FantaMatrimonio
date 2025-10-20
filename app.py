@@ -46,8 +46,6 @@ mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-app.config["SESSION_COOKIE_SECURE"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 google_bp = make_google_blueprint(
     client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
@@ -230,50 +228,45 @@ def register():
 
 @app.route("/google_login")
 def google_login():
-    if not google.authorized:
-        return redirect(url_for("google.login"))
-
-    resp = google.get("/oauth2/v2/userinfo")
-    if not resp.ok:
-        flash("Errore durante l'autenticazione Google", "danger")
-        return redirect(url_for("login"))
-
-    user_info = resp.json()
-
-    # Alcune email potrebbero non essere presenti
-    email = user_info.get("email")
-    if not email:
-        flash("Google non ha fornito la tua email.", "danger")
-        return redirect(url_for("login"))
-
-    avatar_url = user_info.get("picture", "default.png")
-    username = email.split("@")[0]
-
-    # Controlla se l'utente esiste con questa email
-    user = User.query.filter_by(email=email).first()
-
-    if user:
-        # L'utente esiste, controlla il provider
-        if user.provider != "google":
-            flash("Questa email è già registrata con un account locale.", "danger")
+    try:
+        if not google.authorized:
+            return redirect(url_for("google.login"))
+        resp = google.get("/oauth2/v2/userinfo")
+        if not resp.ok:
+            flash("Errore durante l'autenticazione Google", "danger")
             return redirect(url_for("login"))
-    else:
-        # L'utente non esiste, crealo
-        user = User(
-            username=username,
-            email=email,
-            avatar=avatar_url,
-            provider="google"
-        )
-        db.session.add(user)
-        db.session.commit()
+        user_info = resp.json()
 
-    # Login: aggiorna sessione
-    session['user_id'] = user.id
-    session['username'] = user.username
-    session['avatar'] = user.avatar
-    flash("Login con Google effettuato!", "success")
-    return redirect(url_for("dashboard"))
+        email = user_info.get("email")
+        if not email:
+            flash("Google non ha fornito la tua email.", "danger")
+            return redirect(url_for("login"))
+
+        avatar_url = user_info.get("picture", "default.png")
+        username = email.split("@")[0]
+        user = User.query.filter_by(email=email).first()
+        if user:
+            if user.provider != "google":
+                flash("Questa email è già registrata con un account locale.", "danger")
+                return redirect(url_for("login"))
+        else:
+            user = User(
+                username=username,
+                email=email,
+                avatar=avatar_url,
+                provider="google"
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['avatar'] = user.avatar
+        flash("Login con Google effettuato!", "success")
+        return redirect(url_for("dashboard"))
+    except Exception as e:
+        return f"Errore interno Google login: {str(e)}", 500
+
 @app.route('/confirm/<token>')
 def confirm_email(token):
     try:
