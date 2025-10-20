@@ -33,17 +33,12 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 google_bp = make_google_blueprint(
-    client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
-    client_secret="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",
-    scope=[
-        "openid",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile"
-    ],
-    redirect_to="google_login"
+    client_id="TUO_CLIENT_ID",
+    client_secret="TUO_CLIENT_SECRET",
+    redirect_url="https://www.therealfantamatrimonio.it/login/google/authorized",
+    scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
 )
 app.register_blueprint(google_bp, url_prefix="/login")
-
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
