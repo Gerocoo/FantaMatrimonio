@@ -40,6 +40,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'register@therealfantamatrimonio.it'
 app.config['MAIL_PASSWORD'] = 'Aeiou123aeiou@@!suca'
+app.config['MAIL_DEFAULT_SENDER'] = 'register@therealfantamatrimonio.it'
 mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
