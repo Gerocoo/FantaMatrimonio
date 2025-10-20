@@ -41,7 +41,7 @@ app.config['MAIL_SERVER'] = 'smtp.ionos.it'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'register@therealfantamatrimonio.it'
-app.config['MAIL_PASSWORD'] = 'Aeiou123aeiou@@!suca'    # Usa app password con Gmail
+app.config['MAIL_PASSWORD'] = 'Aeiou123aeiou@@!suca'
 mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -222,6 +222,7 @@ def register():
                               sender=app.config['MAIL_USERNAME'],
                               recipients=[email])
                 msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
+                msg.charset = 'utf-8'
                 mail.send(msg)
                 flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
                 return redirect(url_for("login"))
@@ -599,6 +600,12 @@ def upload_avatar():
 @app.route("/privacy")
 def privacy_policy():
     return render_template("privacy_policy.html")
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    traceback.print_exc()
+    return f"Errore interno: {str(e)}", 500
 
 if __name__ == "__main__":
     with app.app_context():
