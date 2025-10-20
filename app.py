@@ -10,6 +10,12 @@ default_dir = os.path.join('static')
 default_path = os.path.join(default_dir, 'default.png')
 os.makedirs(default_dir, exist_ok=True)
 from werkzeug.utils import secure_filename
+from itsdangerous import URLSafeTimedSerializer
+from flask import current_app
+from flask_mail import Mail, Message
+
+
+
 
 try:
     from PIL import Image, ImageDraw
@@ -31,6 +37,14 @@ app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'tuoindirizzo@gmail.com'
+app.config['MAIL_PASSWORD'] = 'tuapassword'    # Usa app password con Gmail
+mail = Mail(app)
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 google_bp = make_google_blueprint(
     client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
@@ -48,7 +62,8 @@ class User(db.Model):
     avatar = db.Column(db.String(255), default="default.png")
     provider = db.Column(db.String(16), default="local")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    is_verified = db.Column(db.Boolean, default=False)
+    email_token = db.Column(db.String(128))
     owned_leagues = db.relationship('League', backref='owner', lazy=True, foreign_keys='League.owner_id')
     memberships = db.relationship('LeagueMember', backref='user', lazy=True)
     votes = db.relationship('FactorVote', backref='voter', lazy=True)
@@ -110,6 +125,8 @@ def generate_league_code():
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         if not League.query.filter_by(code=code).first():
             return code
+def get_serializer():
+    return URLSafeTimedSerializer(app.secret_key)
 
 def setup_default_factors(league_id):
     """Crea i fattori di default per una nuova lega"""
@@ -149,10 +166,6 @@ def calculate_member_scores(league_id):
     
     db.session.commit()
 
-# ============================================
-# ROUTES - Autenticazione
-# ============================================
-
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -165,6 +178,9 @@ def login():
         user = User.query.filter_by(username=username, provider="local").first()
         
         if user and check_password_hash(user.password_hash, password):
+            if not user.is_verified:
+                flash("Devi prima confermare la tua email!", "warning")
+                return redirect(url_for("login"))
             session['user_id'] = user.id
             session['username'] = user.username
             session['avatar'] = user.avatar
@@ -172,7 +188,6 @@ def login():
             return redirect(url_for("dashboard"))
         else:
             flash("Credenziali non valide", "danger")
-    
     return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
@@ -181,28 +196,35 @@ def register():
         username = request.form.get("username")
         email = request.form.get("email")
         password = request.form.get("password")
-        
         if User.query.filter_by(username=username).first():
             flash("Username già esistente", "danger")
         elif User.query.filter_by(email=email).first():
             flash("Email già registrata", "danger")
         else:
             hashed = generate_password_hash(password)
+            token = get_serializer().dumps(email, salt="email-confirm")
             user = User(
                 username=username,
                 email=email,
                 password_hash=hashed,
                 provider="local",
-                avatar="default.png"
+                avatar="default.png",
+                is_verified=False,
+                email_token=token
             )
             db.session.add(user)
             db.session.commit()
-            flash("Registrazione completata! Effettua il login.", "success")
+            # INVIO EMAIL
+            link = url_for('confirm_email', token=token, _external=True)
+            msg = Message("Conferma la tua email FantaMatrimonio",
+                          sender=app.config['MAIL_USERNAME'],
+                          recipients=[email])
+            msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
+            mail.send(msg)
+            flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
             return redirect(url_for("login"))
-    
     return render_template("register.html")
 
-@app.route("/google_login")
 @app.route("/google_login")
 def google_login():
     if not google.authorized:
@@ -249,7 +271,28 @@ def google_login():
     session['avatar'] = user.avatar
     flash("Login con Google effettuato!", "success")
     return redirect(url_for("dashboard"))
+@app.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = get_serializer().loads(token, salt="email-confirm", max_age=3600*48)
+    except Exception:
+        flash("Link non valido o scaduto. Prova a registrarti di nuovo.", "danger")
+        return redirect(url_for('login'))
 
+    user = User.query.filter_by(email=email).first()
+    if user and not user.is_verified:
+        user.is_verified = True
+        user.email_token = None
+        db.session.commit()
+        flash("Email confermata! Ora puoi accedere.", "success")
+        return redirect(url_for('login'))
+    elif user and user.is_verified:
+        flash("Email già confermata. Effettua il login.", "info")
+        return redirect(url_for('login'))
+    else:
+        flash("Utente inesistente.", "danger")
+        return redirect(url_for('register'))
+    
 @app.route("/logout")
 def logout():
     session.clear()
