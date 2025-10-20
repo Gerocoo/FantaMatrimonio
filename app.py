@@ -37,11 +37,11 @@ app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_SERVER'] = 'smtp.ionos.it'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'tuoindirizzo@gmail.com'
-app.config['MAIL_PASSWORD'] = 'tuapassword'    # Usa app password con Gmail
+app.config['MAIL_USERNAME'] = 'register@therealfantamatrimonio.it'
+app.config['MAIL_PASSWORD'] = 'Aeiou123aeiou@@!suca'    # Usa app password con Gmail
 mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -193,38 +193,42 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == "POST":
-        username = request.form.get("username")
-        email = request.form.get("email")
-        password = request.form.get("password")
-        if User.query.filter_by(username=username).first():
-            flash("Username già esistente", "danger")
-        elif User.query.filter_by(email=email).first():
-            flash("Email già registrata", "danger")
-        else:
-            hashed = generate_password_hash(password)
-            token = get_serializer().dumps(email, salt="email-confirm")
-            user = User(
-                username=username,
-                email=email,
-                password_hash=hashed,
-                provider="local",
-                avatar="default.png",
-                is_verified=False,
-                email_token=token
-            )
-            db.session.add(user)
-            db.session.commit()
-            # INVIO EMAIL
-            link = url_for('confirm_email', token=token, _external=True)
-            msg = Message("Conferma la tua email FantaMatrimonio",
-                          sender=app.config['MAIL_USERNAME'],
-                          recipients=[email])
-            msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
-            mail.send(msg)
-            flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
-            return redirect(url_for("login"))
-    return render_template("register.html")
+    try:
+        if request.method == "POST":
+            username = request.form.get("username")
+            email = request.form.get("email")
+            password = request.form.get("password")
+            if User.query.filter_by(username=username).first():
+                flash("Username già esistente", "danger")
+            elif User.query.filter_by(email=email).first():
+                flash("Email già registrata", "danger")
+            else:
+                hashed = generate_password_hash(password)
+                token = get_serializer().dumps(email, salt="email-confirm")
+                user = User(
+                    username=username,
+                    email=email,
+                    password_hash=hashed,
+                    provider="local",
+                    avatar="default.png",
+                    is_verified=False,
+                    email_token=token
+                )
+                db.session.add(user)
+                db.session.commit()
+                link = url_for('confirm_email', token=token, _external=True)
+                # INVIA LA MAIL (debug)
+                msg = Message("Conferma la tua email FantaMatrimonio",
+                              sender=app.config['MAIL_USERNAME'],
+                              recipients=[email])
+                msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
+                mail.send(msg)
+                flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+                return redirect(url_for("login"))
+        return render_template("register.html")
+    except Exception as e:
+        return f"ERRORE REGISTRAZIONE: {str(e)}", 500
+
 
 @app.route("/google_login")
 def google_login():
