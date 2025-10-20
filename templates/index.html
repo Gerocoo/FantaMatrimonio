@@ -3,7 +3,8 @@
 {% block content %}
 <div class="banner-lilla">
   <h1>FantaMatrimonio</h1>
-  <p>Il gioco per scommettere sul tuo futuro (o su quello degli altri!)</p>
+  <p>Il gioco per scommettere sul tuo futuro</p>
+   <p>(o su quello degli altri!)</p>
   {% if not session.get('user_id') %}
     <a href="{{ url_for('login') }}" class="btn btn-primary">Inizia a Giocare</a>
     <a href="{{ url_for('google.login') }}" class="btn btn-google">
