@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Unisciti a Lega - FantaMatrimonio{% endblock %}
+{% block content %}
+<form method="post">
+  <h2>Unisciti a una Lega</h2>
+  <input type="text" name="code" placeholder="Inserisci il codice della lega" maxlength="8" required style="text-transform: uppercase;" />
+  <button type="submit">Unisciti</button>
+  <p><a href="{{ url_for('dashboard') }}">Torna alla Dashboard</a></p>
+</form>
+{% endblock %}

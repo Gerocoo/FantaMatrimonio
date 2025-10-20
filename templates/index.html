@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}FantaMatrimonio - Il gioco per scommettere sul tuo futuro{% endblock %}
+{% block content %}
+<div class="banner-lilla">
+  <h1>FantaMatrimonio</h1>
+  <p>Il gioco per scommettere sul tuo futuro (o su quello degli altri!)</p>
+  {% if not session.get('user_id') %}
+    <a href="{{ url_for('login') }}" class="btn btn-primary">Inizia a Giocare</a>
+    <a href="{{ url_for('google.login') }}" class="btn btn-google">
+      <img src="{{ url_for('static', filename='google-icon.png') }}" alt="Google">
+      Login con Google
+    </a>
+  {% else %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Le Mie Leghe</a>
+  {% endif %}
+</div>
+
+<main>
+  <h2>Benvenuti a FantaMatrimonio</h2>
+  <p>
+    Il gioco di scommesse più divertente e goliardico che mette alla prova la vostra conoscenza degli amici (e di voi stessi)! 
+    Pronti a sfidare i vostri amici e a prevedere chi sarà il prossimo a convolare a nozze?
+  </p>
+</main>
+{% endblock %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>

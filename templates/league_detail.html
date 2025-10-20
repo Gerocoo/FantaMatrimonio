@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ league.name }} - FantaMatrimonio{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ league.name }}</h2>
+  <p>{{ league.description or 'Nessuna descrizione' }}</p>
+  <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
+  <p style="font-size: 0.9rem; opacity: 0.7;">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
+  
+  <div style="text-align: center; margin: 2rem 0;">
+    {% if is_member %}
+      <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
+    {% endif %}
+    {% if is_owner %}
+      <button onclick="document.getElementById('addMemberForm').style.display='block'" class="btn btn-secondary">Aggiungi Membro</button>
+      <button onclick="document.getElementById('addFactorForm').style.display='block'" class="btn btn-secondary">Aggiungi Fattore</button>
+    {% endif %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
+  </div>
+</div>
+
+<!-- Form aggiungi membro (solo owner) -->
+{% if is_owner %}
+<div id="addMemberForm" style="display: none;">
+  <form method="post" action="{{ url_for('add_member', league_id=league.id) }}">
+    <h2>Aggiungi Membro</h2>
+    <input type="text" name="name" placeholder="Nome del membro" required />
+    <input type="number" name="age" placeholder="Età (opzionale)" />
+    <button type="submit">Aggiungi</button>
+    <button type="button" onclick="document.getElementById('addMemberForm').style.display='none'">Annulla</button>
+  </form>
+</div>
+
+<div id="addFactorForm" style="display: none;">
+  <form method="post" action="{{ url_for('add_factor', league_id=league.id) }}">
+    <h2>Aggiungi Fattore</h2>
+    <input type="text" name="name" placeholder="Nome del fattore" required />
+    <textarea name="description" placeholder="Descrizione"></textarea>
+    <input type="number" step="0.1" name="weight" placeholder="Peso (es. 1.0)" value="1.0" />
+    <button type="submit">Aggiungi</button>
+    <button type="button" onclick="document.getElementById('addFactorForm').style.display='none'">Annulla</button>
+  </form>
+</div>
+{% endif %}
+
+<main>
+  <h2>Classifica Membri</h2>
+  {% if members %}
+  <table>
+    <thead>
+      <tr>
+        <th>Posizione</th>
+        <th>Nome</th>
+        <th>Età</th>
+        <th>Punteggio</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for member in members %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ member.name }}</td>
+        <td>{{ member.age or '-' }}</td>
+        <td><strong>{{ "%.2f"|format(member.total_score) }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p style="text-align: center; opacity: 0.7;">Nessun membro ancora</p>
+  {% endif %}
+  
+  <h2 style="margin-top: 3rem;">Fattori di Valutazione</h2>
+  {% if factors %}
+  <table>
+    <thead>
+      <tr>
+        <th>Fattore</th>
+        <th>Descrizione</th>
+        <th>Peso</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for factor in factors %}
+      <tr>
+        <td>{{ factor.name }}</td>
+        <td>{{ factor.description or '-' }}</td>
+        <td>{{ factor.weight }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p style="text-align: center; opacity: 0.7;">Nessun fattore definito</p>
+  {% endif %}
+</main>
+{% endblock %}

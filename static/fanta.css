@@ -1,0 +1,593 @@
+/* ============================================
+   DESIGN SYSTEM - Variabili CSS da Replit
+   ============================================ */
+:root {
+  --background: hsl(332, 71%, 79%);
+  --foreground: hsl(324, 100%, 9%);
+  --muted: hsl(330, 65%, 67%);
+  --muted-foreground: hsl(324, 100%, 9%);
+  --popover: hsl(335, 100%, 99%);
+  --popover-foreground: hsl(324, 100%, 9%);
+  --card: hsl(335, 100%, 99%);
+  --card-foreground: hsl(324, 100%, 9%);
+  --border: hsl(330, 65%, 67%);
+  --input: hsl(330, 65%, 67%);
+  --primary: hsl(328, 88%, 67%);
+  --primary-foreground: hsl(335, 100%, 99%);
+  --secondary: hsl(332, 100%, 85%);
+  --secondary-foreground: hsl(324, 100%, 9%);
+  --accent: hsl(332, 100%, 85%);
+  --accent-foreground: hsl(324, 100%, 9%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(328, 88%, 67%);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: hsl(337, 100%, 0%);
+  --foreground: hsl(334, 100%, 96%);
+  --muted: hsl(324, 73%, 28%);
+  --muted-foreground: hsl(334, 100%, 96%);
+  --popover: hsl(325, 95%, 9%);
+  --popover-foreground: hsl(334, 100%, 96%);
+  --card: hsl(325, 95%, 9%);
+  --card-foreground: hsl(334, 100%, 96%);
+  --border: hsl(324, 73%, 28%);
+  --input: hsl(324, 73%, 28%);
+  --primary: hsl(326, 62%, 53%);
+  --primary-foreground: hsl(335, 84%, 99%);
+  --secondary: hsl(324, 73%, 28%);
+  --secondary-foreground: hsl(334, 100%, 96%);
+  --accent: hsl(324, 73%, 28%);
+  --accent-foreground: hsl(334, 100%, 96%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(326, 62%, 53%);
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Dancing Script", cursive;
+  color: var(--foreground);
+}
+
+/* ============================================
+   NAVBAR
+   ============================================ */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: var(--card);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-logo {
+  font-family: "Dancing Script", cursive;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown a {
+  text-decoration: none;
+  color: var(--foreground);
+  font-weight: 500;
+  font-family: "Montserrat", sans-serif;
+}
+
+#profileDropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  transition: background 0.2s;
+}
+
+#profileDropdown:hover {
+  background: var(--muted);
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 110%;
+  background: var(--popover);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.5rem;
+  min-width: 200px;
+  z-index: 999;
+  border: 1px solid var(--border);
+}
+
+.dropdown-content a {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: calc(var(--radius) - 2px);
+  transition: background 0.2s;
+  font-size: 0.95rem;
+}
+
+.dropdown-content a:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* ============================================
+   HERO BANNER
+   ============================================ */
+.banner-lilla {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  padding: 5rem 2rem;
+  text-align: center;
+  color: var(--primary-foreground);
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-lilla::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/static/wedding-bg.jpg') center center / cover no-repeat;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+.banner-lilla > * {
+  position: relative;
+  z-index: 1;
+}
+
+.banner-lilla h1 {
+  font-family: "Dancing Script", cursive;
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: var(--primary-foreground);
+}
+
+.banner-lilla p {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.4rem;
+  margin-bottom: 2rem;
+  font-weight: 300;
+  opacity: 0.95;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn {
+  display: inline-block;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  border-radius: 2rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  margin: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary:hover {
+  background: var(--ring);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+}
+
+.btn-google {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.btn-google:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+}
+
+.btn-google img {
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.btn-secondary:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+main {
+  max-width: 900px;
+  margin: 4rem auto;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+main h2 {
+  font-family: "Dancing Script", cursive;
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--foreground);
+}
+
+main p {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: var(--muted-foreground);
+  font-weight: 300;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+form {
+  max-width: 450px;
+  margin: 4rem auto;
+  padding: 3rem;
+  background: var(--card);
+  border-radius: calc(var(--radius) * 2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border);
+}
+
+form h2 {
+  font-family: "Dancing Script", cursive;
+  color: var(--foreground);
+  margin-bottom: 2rem;
+  text-align: center;
+  font-size: 2.5rem;
+}
+
+form input,
+form textarea,
+form select {
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid var(--input);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: "Poppins", sans-serif;
+  background: var(--card);
+  color: var(--card-foreground);
+  transition: border 0.3s;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(255, 90, 206, 0.1);
+}
+
+form button {
+  width: 100%;
+  padding: 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+form button:hover {
+  background: var(--ring);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+form p {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+}
+
+form p a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+form p a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   FLASH MESSAGES (Alerts)
+   ============================================ */
+.alert {
+  max-width: 700px;
+  margin: 1.5rem auto;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  text-align: center;
+  font-weight: 500;
+  font-family: "Montserrat", sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-warning {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.alert-info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* ============================================
+   CARDS (Dashboard, Profile, Leagues)
+   ============================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+  padding: 2rem;
+  margin: 1.5rem auto;
+  max-width: 800px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  font-family: "Dancing Script", cursive;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+.card p {
+  color: var(--muted-foreground);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.card img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin: 1rem auto;
+  display: block;
+  border: 4px solid var(--primary);
+}
+
+.card a {
+  display: inline-block;
+  margin: 0.5rem;
+  padding: 0.75rem 2rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  text-decoration: none;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  transition: all 0.3s;
+}
+
+.card a:hover {
+  background: var(--ring);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   LEAGUE LIST
+   ============================================ */
+.league-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem auto;
+  max-width: 1200px;
+  padding: 0 2rem;
+}
+
+.league-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+  text-decoration: none;
+  color: var(--card-foreground);
+}
+
+.league-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary);
+}
+
+.league-card h3 {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+.league-card p {
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+}
+
+.league-card .code {
+  background: var(--muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-family: "Montserrat", monospace;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   TABLES (Members, Scores)
+   ============================================ */
+table {
+  width: 100%;
+  max-width: 900px;
+  margin: 2rem auto;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+thead {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+thead th {
+  padding: 1rem;
+  text-align: left;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+tbody tr:hover {
+  background: var(--muted);
+}
+
+tbody td {
+  padding: 1rem;
+  color: var(--card-foreground);
+  font-family: "Poppins", sans-serif;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .banner-lilla h1 {
+    font-size: 2.5rem;
+  }
+
+  .banner-lilla p {
+    font-size: 1.1rem;
+  }
+
+  .navbar {
+    padding: 1rem;
+  }
+
+  .brand-logo {
+    font-size: 1.5rem;
+  }
+
+  main h2 {
+    font-size: 2rem;
+  }
+
+  .league-list {
+    grid-template-columns: 1fr;
+  }
+
+  form {
+    padding: 2rem 1.5rem;
+  }
+}
+.league-card h3 {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.8rem;
+  color: var(--primary);
+  margin: 0;
+}
+
+.league-card .code {
+  background: var(--secondary);
+  padding: 0.4rem 0.8rem;
+  border-radius: calc(var(--radius) / 2);
+  font-weight: 600;
+  font-family: "Montserrat", monospace;
+  font-size: 0.85rem;
+  color: var(--secondary-foreground);
+  letter-spacing: 1px;
+}
