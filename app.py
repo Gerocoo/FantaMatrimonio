@@ -46,6 +46,9 @@ mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
 google_bp = make_google_blueprint(
     client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
     client_secret="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",
