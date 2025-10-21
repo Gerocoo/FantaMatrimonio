@@ -215,7 +215,10 @@ def register():
                 )
                 db.session.add(user)
                 db.session.commit()
-                with app.test_request_context(base_url="https://therealfantamatrimonio.it"):
+                if os.environ.get("RENDER", None):  # o controlla la variabile d’ambiente che hai su Render
+                    domain = "https://therealfantamatrimonio.it"
+                    link = f"{domain}{url_for('confirm_email', token=token)}"
+                else:
                     link = url_for('confirm_email', token=token, _external=True)
                 msg = Message("Conferma la tua email FantaMatrimonio",
                               sender=app.config['MAIL_USERNAME'],
