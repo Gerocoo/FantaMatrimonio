@@ -200,52 +200,78 @@ def login():
             flash("Credenziali non valide", "danger")
     return render_template("login.html")
 
+from mailtrap import mt
+
+confirmation_html_template = """
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
+<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
+  <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+    <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
+    <p>Ciao {username},</p>
+    <p>Per attivare il tuo account clicca sul pulsante qui sotto:</p>
+    <p style="text-align:center;">
+      <a href="{confirm_url}" style="display:inline-block; padding:12px 25px; background:#3498db; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">Conferma la Registrazione</a>
+    </p>
+    <p>Se non hai richiesto questa registrazione, puoi ignorare questa email.</p>
+    <footer style="margin-top:40px; font-size:12px; color:#999; text-align:center;">
+      FantaMatrimonio - Tutti i diritti riservati &copy; 2025
+    </footer>
+  </div>
+</body>
+</html>
+"""
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     try:
         if request.method == "POST":
-            # Example commented out code for registration
-            # username = request.form.get("username")
-            # email = request.form.get("email")
-            # password = request.form.get("password")
-            # if User.query.filter_by(username=username).first():
-            #     flash("Username già esistente", "danger")
-            # elif User.query.filter_by(email=email).first():
-            #     flash("Email già registrata", "danger")
-            # else:
-            #     hashed = generate_password_hash(password)
-            #     token = get_serializer().dumps(email, salt="email-confirm")
-            #     user = User(
-            #         username=username,
-            #         email=email,
-            #         password_hash=hashed,
-            #         provider="local",
-            #         avatar="default.png",
-            #         is_verified=False,
-            #         email_token=token
-            #     )
-            #     db.session.add(user)
-            #     db.session.commit()
-            #     link = url_for('confirm_email', token=token, _external=True)
-            mail = mt.Mail(
-            sender=mt.Address(email="hello@therealfantamatrimonio.it", name="Mailtrap Test"),
-            to=[mt.Address(email="gerocoo16@gmail.com")],
-            subject="You are awesome!",
-            text="Congrats for sending test email with Mailtrap!",
-            category="Integration Test",
-            )
+            username = request.form.get("username")
+            email = request.form.get("email")
+            password = request.form.get("password")
 
+            if User.query.filter_by(username=username).first():
+                flash("Username già esistente", "danger")
+                return render_template("register.html")
+            elif User.query.filter_by(email=email).first():
+                flash("Email già registrata", "danger")
+                return render_template("register.html")
+
+            hashed = generate_password_hash(password)
+            token = get_serializer().dumps(email, salt="email-confirm")
+            user = User(
+                username=username,
+                email=email,
+                password_hash=hashed,
+                provider="local",
+                avatar="default.png",
+                is_verified=False,
+                email_token=token
+            )
+            
+
+            link = url_for('confirm_email', token=token, _external=True)
+
+            mail = mt.Mail(
+                sender=mt.Address(email="noreply@therealfantamatrimonio.it", name="FantaMatrimonio"),
+                to=[mt.Address(email=email)],
+                subject="Conferma la tua email per FantaMatrimonio!",
+                html=confirmation_html_template.format(username=username, confirm_url=link),
+                category="User Registration"
+            )
             client = mt.MailtrapClient(token="616b82792c3fd1696348a9d3f3ff382b")
             response = client.send(mail)
-
             print(response)
-            # db.session.add(user)
-            # db.session.commit()
+
+            flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+            db.session.add(user)
+            db.session.commit()
             return redirect(url_for("login"))
         return render_template("register.html")
     except Exception as e:
         print("ERRORE REGISTRAZIONE:", e)
-        #flash("Errore di registrazione: " + str(e), "danger")
+        flash("Errore di registrazione: " + str(e), "danger")
         return render_template("register.html")
 
 
