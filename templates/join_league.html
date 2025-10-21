@@ -1,10 +1,115 @@
 {% extends "base.html" %}
-{% block title %}Unisciti a Lega - FantaMatrimonio{% endblock %}
+{% block title %}Unisciti a una Lega - FantaMatrimonio{% endblock %}
 {% block content %}
-<form method="post">
-  <h2>Unisciti a una Lega</h2>
-  <input type="text" name="code" placeholder="Inserisci il codice della lega" maxlength="8" required style="text-transform: uppercase;" />
-  <button type="submit">Unisciti</button>
-  <p><a href="{{ url_for('dashboard') }}">Torna alla Dashboard</a></p>
-</form>
+
+<main style="max-width: 1200px;">
+  <h2>Leghe Disponibili</h2>
+  <p style="margin-bottom: 2rem;">Seleziona una lega per entrare a far parte della community</p>
+
+  {% if leagues %}
+  <div class="league-list">
+    {% for league in leagues %}
+    <div class="card-league">
+      <h3>{{ league.name }}</h3>
+      <p style="color: #666; margin: 0.5rem 0;">{{ league.description or 'Nessuna descrizione' }}</p>
+      
+      <div class="league-info-row">
+        <span class="badge">Codice: {{ league.code }}</span>
+        {% if league.password_hash %}
+        {% endif %}
+      </div>
+
+      <button class="btn-join" 
+        data-league-id="{{ league.id }}" 
+        data-league-code="{{ league.code }}" 
+        data-league-name="{{ league.name }}" 
+        data-has-password="{{ 'true' if league.password_hash else 'false' }}">
+    Entra
+</button>
+
+<script>
+document.querySelectorAll('.btn-join').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const leagueId = this.dataset.leagueId;
+        const leagueCode = this.dataset.leagueCode;
+        const leagueName = this.dataset.leagueName;
+        const hasPassword = this.dataset.hasPassword === 'true';
+        openJoinPopup(leagueId, leagueCode, leagueName, hasPassword);
+    });
+});
+</script>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="no-data">Nessuna lega disponibile al momento</p>
+  {% endif %}
+</main>
+
+<!-- Popup per entrare nella lega -->
+<div id="joinPopupOverlay" class="popup-overlay" style="display: none;" onclick="closeJoinPopup()">
+  <div class="popup-container" onclick="event.stopPropagation()">
+    <button class="popup-close" onclick="closeJoinPopup()">&times;</button>
+    
+    <h3 id="popupLeagueName" style="margin-bottom: 1rem; color: var(--primary);">Nome Lega</h3>
+    <p id="popupLeagueCode" style="color: #666; margin-bottom: 1.5rem;">Codice: XXXX</p>
+    
+    <form id="joinForm" method="POST" action="{{ url_for('join_league') }}">
+      <input type="hidden" name="code" id="hiddenCode" value="">
+      
+      <div id="passwordSection" style="display: none;">
+        <label for="leaguePassword" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password Lega</label>
+        <input 
+          type="password" 
+          name="password" 
+          id="leaguePassword" 
+          placeholder="Inserisci la password"
+          style="width: 100%; padding: 0.75rem; border: 2px solid var(--input); border-radius: var(--radius); margin-bottom: 1rem;">
+      </div>
+      
+      <div style="display: flex; gap: 1rem;">
+        <button type="button" onclick="closeJoinPopup()" class="btn btn-secondary" style="flex: 1; margin: 0;">
+          Annulla
+        </button>
+        <button type="submit" class="btn btn-primary" style="flex: 1; margin: 0;">
+          Conferma
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openJoinPopup(leagueId, leagueCode, leagueName, hasPassword) {
+  document.getElementById('joinPopupOverlay').style.display = 'flex';
+  document.getElementById('popupLeagueName').textContent = leagueName;
+  document.getElementById('popupLeagueCode').textContent = 'Codice: ' + leagueCode;
+  document.getElementById('hiddenCode').value = leagueCode;
+  
+  const passwordSection = document.getElementById('passwordSection');
+  const passwordInput = document.getElementById('leaguePassword');
+  
+  if (hasPassword) {
+    passwordSection.style.display = 'block';
+    passwordInput.required = true;
+  } else {
+    passwordSection.style.display = 'none';
+    passwordInput.required = false;
+    passwordInput.value = '';
+  }
+}
+
+function closeJoinPopup() {
+  document.getElementById('joinPopupOverlay').style.display = 'none';
+  document.getElementById('leaguePassword').value = '';
+}
+
+// Chiudi il popup premendo ESC
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeJoinPopup();
+  }
+});
+</script>
+
 {% endblock %}

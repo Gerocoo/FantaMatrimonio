@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block title %}Vota - {{ league.name }}{% endblock %}
 {% block content %}
 <div class="card">
@@ -6,39 +7,62 @@
   <p>Assegna un punteggio da 1 a 10 per ogni fattore e membro</p>
 </div>
 
-<form method="post" style="max-width: 1000px;">
-  {% for factor in factors %}
-    <h3 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">
-      {{ factor.name }} <span style="font-size: 0.8rem; opacity: 0.7;">(Peso: {{ factor.weight }})</span>
-    </h3>
-    <p style="text-align: center; opacity: 0.8; margin-bottom: 2rem;">{{ factor.description }}</p>
-    
-    <table>
-      <thead>
-        <tr>
-          <th>Membro</th>
-          <th>Punteggio (1-10)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for member in members %}
-        <tr>
-          <td>{{ member.name }}</td>
-          <td>
-            <input type="number" name="score_{{ member.id }}_{{ factor.id }}" 
-                   min="1" max="10" step="0.5" 
-                   placeholder="1-10"
-                   style="width: 100px; text-align: center;">
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endfor %}
-  
-  <div style="text-align: center; margin: 3rem 0;">
-    <button type="submit" class="btn btn-primary">Invia Voti</button>
-    <a href="{{ url_for('league_detail', league_id=league.id) }}" class="btn btn-secondary">Annulla</a>
+{% if members|length == 0 %}
+  <div class="card" style="text-align: center;">
+    <p style="font-size: 1.2rem;">Nessun membro, aggiungi membri per votare</p>
   </div>
-</form>
+{% else %}
+  <form method="post" class="login" style="max-width: 1000px;">
+    {% for factor in factors %}
+      <h3 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">
+        {{ factor.name }} <span style="font-size: 0.8rem; opacity: 0.7;">(Peso: {{ factor.weight }})</span>
+      </h3>
+      <p style="text-align: center; opacity: 0.8; margin-bottom: 2rem;">
+        {{ factor.description }}
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Membro</th>
+            <th>Punteggio (1-10)</th>
+            <th style="text-align:center;">Booster / Sconto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+            <tr>
+              <td>{{ member.name }}</td>
+              <td style="text-align:center;">
+                <div class="rating-group">
+                  {% for i in range(1, 11) %}
+                    <input type="radio" id="score_{{ member.id }}_{{ factor.id }}_{{ i }}" 
+                           name="score_{{ member.id }}_{{ factor.id }}" 
+                           value="{{ i }}">
+                    <label for="score_{{ member.id }}_{{ factor.id }}_{{ i }}" 
+                           class="circle">{{ i }}</label>
+                  {% endfor %}
+                </div>
+              </td>
+              <td style="text-align:center;">
+                <select name="modifier_{{ member.id }}_{{ factor.id }}" class="booster-select">
+                  <option value="1">Normale</option>
+                  <option value="1.1">+10% Booster</option>
+                  <option value="1.25">+25% Super Booster</option>
+                  <option value="0.9">-10% Penalità</option>
+                  <option value="0.75">-25% Grande Penalità</option>
+                </select>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+
+    <div style="text-align: center; margin: 3rem 0;">
+      <button type="submit" class="btn btn-primary">Invia Voti</button>
+      <a href="{{ url_for('league_detail', league_id=league.id) }}" class="btn btn-secondary">Annulla</a>
+    </div>
+  </form>
+{% endif %}
 {% endblock %}

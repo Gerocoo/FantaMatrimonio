@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block title %}Dashboard - FantaMatrimonio{% endblock %}
 {% block content %}
 
@@ -23,77 +24,81 @@
 </div>
 
 <!-- Le Mie Leghe Section -->
-<main style="max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;">
-  <h2 style="text-align: center; margin-bottom: 3rem; font-family: 'Dancing Script', cursive; font-size: 3rem;">
-    Le Mie Leghe
-  </h2>
-  
-  {% if owned_leagues %}
-    <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 2rem 0 1.5rem 0; color: var(--foreground);">
-      Leghe Create da Te
-    </h3>
-    <div class="league-list">
-      {% for league in owned_leagues %}
-        <a href="{{ url_for('league_detail', league_id=league.id) }}" class="league-card">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <svg style="width: 20px; height: 20px; fill: var(--primary);" viewBox="0 0 24 24">
-              <path d="M12 2L2 7v10c0 5.5 3.8 10.7 10 12 6.2-1.3 10-6.5 10-12V7l-10-5zm0 18c-4.4-1-8-5.3-8-10V8.3l8-4 8 4V10c0 4.7-3.6 9-8 10z"/>
-            </svg>
-            <h3 style="margin: 0;">{{ league.name }}</h3>
-          </div>
-          <p style="font-size: 0.9rem; margin: 0.5rem 0;">{{ league.description or 'Nessuna descrizione disponibile' }}</p>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-            <span class="code">{{ league.code }}</span>
-            <span style="font-size: 0.85rem; opacity: 0.7; font-family: 'Montserrat', sans-serif;">
-              <svg style="width: 14px; height: 14px; fill: currentColor; vertical-align: middle;" viewBox="0 0 24 24">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-              </svg>
-              {{ league.members|length }} membri
-            </span>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  {% endif %}
-  
-  {% if joined_leagues %}
-    <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 3rem 0 1.5rem 0; color: var(--foreground);">
-      Leghe a cui Partecipi
-    </h3>
-    <div class="league-list">
-      {% for league in joined_leagues %}
-        <a href="{{ url_for('league_detail', league_id=league.id) }}" class="league-card">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <svg style="width: 20px; height: 20px; fill: var(--primary);" viewBox="0 0 24 24">
-              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-            </svg>
-            <h3 style="margin: 0;">{{ league.name }}</h3>
-          </div>
-          <p style="font-size: 0.9rem; margin: 0.5rem 0;">{{ league.description or 'Nessuna descrizione disponibile' }}</p>
-          <div style="margin-top: 1rem;">
-            <span style="font-size: 0.85rem; opacity: 0.7; font-family: 'Montserrat', sans-serif;">
-              <svg style="width: 14px; height: 14px; fill: currentColor; vertical-align: middle;" viewBox="0 0 24 24">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-              </svg>
-              {{ league.members|length }} membri
-            </span>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  {% endif %}
-  
-  {% if not owned_leagues and not joined_leagues %}
-    <div style="text-align: center; padding: 4rem 2rem;">
-      <svg style="width: 80px; height: 80px; fill: var(--muted); margin-bottom: 1.5rem; opacity: 0.5;" viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-      </svg>
-      <p style="font-size: 1.2rem; opacity: 0.7; margin-bottom: 2rem;">
-        Non fai ancora parte di nessuna lega.<br>
-        Crea o unisciti a una lega per iniziare!
+ {% if owned_leagues %}
+  <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 3rem 0 1.5rem 0; color: var(--foreground); text-align: center;">
+    Le mie Leghe
+  </h3>
+  <div class="league-list">
+    {% for league in owned_leagues %}
+    <div class="card-league">
+      <h1 style="text-align: center; color: var(--primary); margin-bottom: 0.85em;">
+        {{ league.name }}
+      </h1>
+      <p style="text-align: center; color: #666; margin: 0.5rem 0;">
+        {{ league.description or 'Nessuna descrizione disponibile' }}
       </p>
-      <a href="{{ url_for('create_league') }}" class="btn btn-primary">Crea la tua prima lega</a>
+      
+      <div class="league-info-row" style="text-align: center; margin: 1rem 0;">
+        <span class="badge">Codice: {{ league.code }}</span>
+        <span style="display: block; margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">
+          {{ league.members|length }} membri
+        </span>
+      </div>
+
+      <a href="{{ url_for('league_detail', league_id=league.id) }}" 
+         class="btn btn-primary" 
+         style="width: 100%; display: block; text-align: center; margin-top: 1rem; text-decoration: none;">
+        Gestisci
+      </a>
     </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Leghe a cui partecipi -->
+  {% if joined_leagues %}
+  <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 3rem 0 1.5rem 0; color: var(--foreground); text-align: center;">
+    Leghe a cui Partecipi
+  </h3>
+  <div class="league-list">
+    {% for league in joined_leagues %}
+    <div class="card-league">
+      <h3 style="text-align: center; color: var(--primary); margin-bottom: 0.85em;">
+        {{ league.name }}
+      </h3>
+      <p style="text-align: center; color: #666; margin: 0.5rem 0;">
+        {{ league.description or 'Nessuna descrizione disponibile' }}
+      </p>
+      
+      <div class="league-info-row" style="text-align: center; margin: 1rem 0;">
+        <span class="badge">Codice: {{ league.code }}</span>
+        <span style="display: block; margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">
+          {{ league.members|length }} membri
+        </span>
+      </div>
+
+      <a href="{{ url_for('league_detail', league_id=league.id) }}" 
+         class="btn btn-primary" 
+         style="width: 100%; display: block; text-align: center; margin-top: 1rem; text-decoration: none;">
+        Entra
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Nessuna lega -->
+  {% if not owned_leagues and not joined_leagues %}
+  <div style="text-align: center; padding: 4rem 2rem;">
+    <svg style="width: 80px; height: 80px; fill: var(--muted); margin-bottom: 1.5rem; opacity: 0.5;" viewBox="0 0 24 24">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+    </svg>
+    <p style="font-size: 1.2rem; opacity: 0.7; margin-bottom: 2rem;">
+      Non fai ancora parte di nessuna lega.<br>
+      Crea o unisciti a una lega per iniziare!
+    </p>
+    <a href="{{ url_for('create_league') }}" class="btn btn-primary">Crea la tua prima lega</a>
+  </div>
   {% endif %}
 </main>
 

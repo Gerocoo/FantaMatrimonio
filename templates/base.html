@@ -6,73 +6,64 @@
   <title>{% block title %}FantaMatrimonio{% endblock %}</title>
   <meta name="description" content="FantaMatrimonio - Il gioco di scommesse più divertente e goliardico che mette alla prova la vostra conoscenza degli amici (e di voi stessi!)">
   <link rel="icon" href="{{ url_for('static', filename='default.png') }}" />
-  
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-  
-  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}">
 </head>
 <body>
   <nav class="navbar">
-    <a href="{{ url_for('home') }}" class="brand-logo">FantaMatrimonio</a>
-    {% if session.get('user_id') %}
-      <div class="dropdown">
-        <a href="#" id="profileDropdown" onclick="toggleDropdown();return false;">
-          <img src="{% if session.get('avatar') and session['avatar'].startswith('http') %}
-             {{ session['avatar'] }}
-           {% else %}
-             {{ url_for('static', filename=session.get('avatar', 'default.png')) }}
-           {% endif %}"
-               alt="Avatar" 
-               style="height:40px;width:40px;border-radius:50%;border:2px solid var(--primary);">
-          <span>{{ session['username'] }}</span>
-          <svg style="width:16px;height:16px;fill:var(--primary);" viewBox="0 0 24 24">
-            <path d="M7 10l5 5 5-5z"/>
+  <a href="{{ url_for('home') }}" class="brand-logo">FantaMatrimonio</a>
+  
+  {% if session.get('user_id') %}
+    <div class="dropdown">
+      <div id="profileDropdown" onclick="toggleDropdown();return false;" style="cursor: pointer;">
+        <img src="{% if session.get('avatar') and session['avatar'].startswith('http') %}
+               {{ session['avatar'] }}
+             {% else %}
+               {{ url_for('static', filename=session.get('avatar', 'default.png')) }}
+             {% endif %}"
+             alt="Avatar" 
+             class="navbar-avatar">
+      </div>
+      <div id="menuDropdown" class="dropdown-content">
+        <a href="{{ url_for('dashboard') }}">
+          <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
           </svg>
+          Le mie leghe
         </a>
-        <div id="menuDropdown" class="dropdown-content">
-          <a href="{{ url_for('dashboard') }}">
-            <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
-              <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
-            </svg>
-            Le mie leghe
-          </a>
-          <a href="{{ url_for('create_league') }}">
-            <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-            Crea lega
-          </a>
-          <a href="{{ url_for('join_league') }}">
-            <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
-              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-            </svg>
-            Unisciti a lega
-          </a>
-          <a href="{{ url_for('profilo') }}">
-            <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
-            Profilo
-          </a>
-          <a href="{{ url_for('logout') }}" style="border-top: 1px solid var(--border); margin-top: 0.5rem; padding-top: 0.75rem;">
-            <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
-              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-            </svg>
-            Logout
-          </a>
-        </div>
+        <a href="{{ url_for('create_league') }}">
+          <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          Crea lega
+        </a>
+        <a href="{{ url_for('join_league') }}">
+          <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+          Unisciti a lega
+        </a>
+        <a href="{{ url_for('profilo') }}">
+          <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          Profilo
+        </a>
+        <a href="{{ url_for('logout') }}" style="border-top: 1px solid var(--border); margin-top: 0.5rem; padding-top: 0.75rem;">
+          <svg style="width:16px;height:16px;margin-right:8px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+          </svg>
+          Logout
+        </a>
       </div>
-    {% else %}
-    
-      <div style="display:flex;gap:1rem;">
-        <a href="{{ url_for('login') }}" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; margin: 0;">Login</a>
-        <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.5rem 1.5rem; margin: 0;">Registrati</a>
-      </div>
-    {% endif %}
-  </nav>
-
+    </div>
+  {% else %}
+    <div style="gap:1rem;">
+      <a href="{{ url_for('login') }}" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; margin: 0;">Login</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.5rem 1.5rem; margin: 0;">Registrati</a>
+    </div>
+  {% endif %}
+</nav>
   
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -85,7 +76,8 @@
   {% endwith %}
 
  
-  {% block content %}{% endblock %}
+  {% block content %}
+  {% endblock %}
 
   
   <footer style="background: var(--card); border-top: 1px solid var(--border); padding: 2rem; text-align: center; margin-top: 4rem;">
@@ -146,7 +138,7 @@ function handleCredentialResponse(response) {
 
 window.onload = function () {
     google.accounts.id.initialize({
-        client_id: "TUO_CLIENT_ID",  // inserisci qui il tuo Client ID Google
+        client_id: "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",  // inserisci qui il tuo Client ID Google
         callback: handleCredentialResponse
     });
 

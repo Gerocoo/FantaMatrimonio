@@ -2,9 +2,20 @@
 {% block title %}FantaMatrimonio - Il gioco per scommettere sul tuo futuro{% endblock %}
 {% block content %}
 <div class="banner-lilla">
-  <h1>FantaMatrimonio</h1>
-  <p>Il gioco per scommettere sul tuo futuro</p>
-   <p>(o su quello degli altri!)</p>
+  <main>
+  <h1>Benvenuti a FantaMatrimonio</h1>
+  <p>
+    Il gioco di scommesse più divertente e goliardico che mette alla prova la vostra conoscenza degli amici (e di voi stessi)! 
+    Pronti a sfidare i vostri amici e a prevedere chi sarà il prossimo a convolare a nozze?
+  </p>
+   <p style="margin-top: 1rem; font-size: 1.1rem;">
+    Non sai come si gioca? 
+    <a href="{{ url_for('rules') }}" style="color: white; text-decoration: underline; font-weight: 600;">
+      Leggi le regole!
+    </a>
+  </p>
+  
+</main>
   {% if not session.get('user_id') %}
     <a href="{{ url_for('login') }}" class="btn btn-primary">Inizia a Giocare</a>
     <a href="{{ url_for('google.login') }}" class="btn btn-google">
@@ -16,11 +27,132 @@
   {% endif %}
 </div>
 
-<main>
-  <h2>Benvenuti a FantaMatrimonio</h2>
-  <p>
-    Il gioco di scommesse più divertente e goliardico che mette alla prova la vostra conoscenza degli amici (e di voi stessi)! 
-    Pronti a sfidare i vostri amici e a prevedere chi sarà il prossimo a convolare a nozze?
-  </p>
+<!-- Lista leghe attive -->
+<main style="max-width: 1200px;">
+   <div class="search-container">
+    <form method="GET" action="{{ url_for('home') }}" class="search-form">
+      <input 
+        type="text" 
+        name="search" 
+        placeholder="Cerca per nome lega o proprietario..." 
+        value="{{ search_query or '' }}"
+        class="search-input"
+      >
+      <button type="submit" class="btn btn-primary search-btn">🔍 Cerca</button>
+      {% if search_query %}
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancella</a>
+      {% endif %}
+    </form>
+  </div>
+  <h2>Leghe Disponibili</h2>
+  <p style="margin-bottom: 2rem;">Seleziona una lega per entrare a far parte della community</p>
+
+  {% if leagues %}
+  <div class="league-list">
+    {% for league in leagues %}
+    <div class="card-league">
+      <h1>{{ league.name }}</h1>
+      <p style="color: #666; margin: 0.5rem 0;">{{ league.description or 'Nessuna descrizione' }}</p>
+      
+      <div class="league-info-row">
+        <span class="badge">Codice: {{ league.code }}</span>
+        {% if league.password_hash %}
+        {% endif %}
+      </div>
+
+      <button class="btn-join" 
+        data-league-id="{{ league.id }}" 
+        data-league-code="{{ league.code }}" 
+        data-league-name="{{ league.name }}" 
+        data-has-password="{{ 'true' if league.password_hash else 'false' }}">
+    Entra
+</button>
+
+<script>
+document.querySelectorAll('.btn-join').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const leagueId = this.dataset.leagueId;
+        const leagueCode = this.dataset.leagueCode;
+        const leagueName = this.dataset.leagueName;
+        const hasPassword = this.dataset.hasPassword === 'true';
+        openJoinPopup(leagueId, leagueCode, leagueName, hasPassword);
+    });
+});
+</script>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="no-data">Nessuna lega disponibile al momento</p>
+  {% endif %}
 </main>
+
+<!-- Popup per entrare nella lega -->
+<div id="joinPopupOverlay" class="popup-overlay" style="display: none;" onclick="closeJoinPopup()">
+  <div class="popup-container" onclick="event.stopPropagation()">
+    <button class="popup-close" onclick="closeJoinPopup()">&times;</button>
+    
+    <h3 id="popupLeagueName" style="margin-bottom: 1rem; color: var(--primary);">Nome Lega</h3>
+    <p id="popupLeagueCode" style="color: #666; margin-bottom: 1.5rem;">Codice: XXXX</p>
+    
+    <form id="joinForm" method="POST" action="{{ url_for('join_league') }}">
+      <input type="hidden" name="code" id="hiddenCode" value="">
+      
+      <div id="passwordSection" style="display: none;">
+        <label for="leaguePassword" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password Lega</label>
+        <input 
+          type="password" 
+          name="password" 
+          id="leaguePassword" 
+          placeholder="Inserisci la password"
+          style="width: 100%; padding: 0.75rem; border: 2px solid var(--input); border-radius: var(--radius); margin-bottom: 1rem;">
+      </div>
+      
+      <div style="display: flex; gap: 1rem;">
+        <button type="button" onclick="closeJoinPopup()" class="btn btn-secondary" style="flex: 1; margin: 0;">
+          Annulla
+        </button>
+        <button type="submit" class="btn btn-primary" style="flex: 1; margin: 0;">
+          Conferma
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openJoinPopup(leagueId, leagueCode, leagueName, hasPassword) {
+  document.getElementById('joinPopupOverlay').style.display = 'flex';
+  document.getElementById('popupLeagueName').textContent = leagueName;
+  document.getElementById('popupLeagueCode').textContent = 'Codice: ' + leagueCode;
+  document.getElementById('hiddenCode').value = leagueCode;
+  
+  const passwordSection = document.getElementById('passwordSection');
+  const passwordInput = document.getElementById('leaguePassword');
+  
+  if (hasPassword) {
+    passwordSection.style.display = 'block';
+    passwordInput.required = true;
+  } else {
+    passwordSection.style.display = 'none';
+    passwordInput.required = false;
+    passwordInput.value = '';
+  }
+}
+
+function closeJoinPopup() {
+  document.getElementById('joinPopupOverlay').style.display = 'none';
+  document.getElementById('leaguePassword').value = '';
+}
+
+// Chiudi il popup premendo ESC
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeJoinPopup();
+  }
+});
+</script>
+
 {% endblock %}
+
+

@@ -1,100 +1,225 @@
 {% extends "base.html" %}
 {% block title %}{{ league.name }} - FantaMatrimonio{% endblock %}
 {% block content %}
-<div class="card">
+<script>
+    const currentUser = "{{ session.get('username')|tojson }}";
+</script>
+<section class="league-info card">
   <h2>{{ league.name }}</h2>
   <p>{{ league.description or 'Nessuna descrizione' }}</p>
   <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
-  <p style="font-size: 0.9rem; opacity: 0.7;">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
-  
-  <div style="text-align: center; margin: 2rem 0;">
+  <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
+  <div class="actions" style="text-align:center; margin:2rem 0;">
     {% if is_member %}
       <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
     {% endif %}
     {% if is_owner %}
-      <button onclick="document.getElementById('addMemberForm').style.display='block'" class="btn btn-secondary">Aggiungi Membro</button>
-      <button onclick="document.getElementById('addFactorForm').style.display='block'" class="btn btn-secondary">Aggiungi Fattore</button>
+      <button onclick="toggleForm('addMemberForm')" class="btn btn-secondary">Aggiungi Membro</button>
+      <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
     {% endif %}
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
   </div>
-</div>
+</section>
 
 {% if is_owner %}
-<div id="addMemberForm" style="display: none;">
-  <form method="post" action="{{ url_for('add_member', league_id=league.id) }}">
-    <h2>Aggiungi Membro</h2>
+<section id="addMemberForm" class="popup-form" style="display:none;">
+  <form method="post" class="login" action="{{ url_for('add_member', league_id=league.id) }}">
+    <h3>Aggiungi Membro</h3>
     <input type="text" name="name" placeholder="Nome del membro" required />
     <input type="number" name="age" placeholder="Età (opzionale)" />
-    <button type="submit">Aggiungi</button>
-    <button type="button" onclick="document.getElementById('addMemberForm').style.display='none'">Annulla</button>
+    <button type="submit" class="btn btn-primary">Aggiungi</button>
+    <button type="button" class="btn btn-link" onclick="toggleForm('addMemberForm')">Annulla</button>
   </form>
-</div>
-
-<div id="addFactorForm" style="display: none;">
-  <form method="post" action="{{ url_for('add_factor', league_id=league.id) }}">
-    <h2>Aggiungi Fattore</h2>
+</section>
+<section id="addFactorForm" class="popup-form" style="display:none;">
+  <form method="post" class="login" action="{{ url_for('add_factor', league_id=league.id) }}">
+    <h3>Aggiungi Fattore</h3>
     <input type="text" name="name" placeholder="Nome del fattore" required />
     <textarea name="description" placeholder="Descrizione"></textarea>
     <input type="number" step="0.1" name="weight" placeholder="Peso (es. 1.0)" value="1.0" />
-    <button type="submit">Aggiungi</button>
-    <button type="button" onclick="document.getElementById('addFactorForm').style.display='none'">Annulla</button>
+    <button type="submit" class="btn btn-primary">Aggiungi</button>
+    <button type="button" class="btn btn-link" onclick="toggleForm('addFactorForm')">Annulla</button>
   </form>
-</div>
-<!-- Pulsante flottante per aprire/chiudere la chat -->
-<button id="toggle-chat" style="position:fixed;bottom:32px;right:32px;z-index:9999;background:var(--primary);color:#fff;width:54px;height:54px;border:none;border-radius:50%;box-shadow:0 2px 16px rgba(0,0,0,0.18);font-size:1.7em;cursor:pointer;">
-    💬
-</button>
-
-<!-- Finestra chat flottante -->
-<div id="chat-float" style="display:none;position:fixed;bottom:96px;right:32px;z-index:9998;width:330px;max-width:90vw;border-radius:18px;background:#fff;box-shadow:0 6px 32px rgba(0,0,0,0.17);border:1.5px solid var(--primary);overflow:hidden;">
-    <div style="padding:1rem;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:space-between;">
-        <span>Chat lega</span>
-        <button onclick="closeChat()" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;">×</button>
-    </div>
-    <div id="chat-messages" style="max-height:240px;overflow-y:auto;padding:1rem 1rem 0 1rem;font-size:0.99em;background:#fff;"></div>
-    <form id="chat-form" style="display:flex;gap:6px;padding:1rem;background:#fff;">
-        <input type="text" id="chat-input" placeholder="Scrivi un messaggio..." style="flex:1;border-radius:12px;padding:0.6rem 1rem;border:1px solid #ccc;">
-        <button type="submit" class="btn btn-primary" style="padding:0.6rem 1.2rem;font-size:1em;">Invia</button>
-    </form>
-</div>
+</section>
 {% endif %}
+
+<div id="chat-container">
+  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
+    💬
+    <span id="chat-badge" style="
+      display: none;
+      background: rgb(219, 7, 95);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 50%;
+      position: absolute;
+      top: -5px;
+      right: -5px;
+    ">0</span>
+  </button>
+  <div id="chat-float" class="chat-popup" style="display:none;">
+    <header class="chat-header">
+      <span>Chat</span>
+      <button onclick="closeChat()" class="close-chat">&times;</button>
+    </header>
+    <div id="chat-messages" class="chat-body"></div>
+    <form id="chat-form" class="chat-input-form" autocomplete="off">
+      <input id="chat-input" type="text" placeholder="Scrivi un messaggio..." required />
+      <button type="submit" class="btn btn-primary">Invia</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const leagueId = "{{ league.code }}";
+const chatMessages = document.getElementById("chat-messages");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const chatFloat = document.getElementById("chat-float");
+const chatBtn = document.getElementById("toggle-chat");
+const chatBadge = document.getElementById("chat-badge");
+let lastSeenMessageId = null;
+let unreadCount = 0;
+
+function updateBadge() {
+  if (unreadCount > 0) {
+    chatBadge.style.display = "inline";
+    chatBadge.textContent = unreadCount;
+  } else {
+    chatBadge.style.display = "none";
+  }
+}
+
+function toggleForm(formId) {
+  const form = document.getElementById(formId);
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+}
+
+function closeChat() { 
+  chatFloat.style.display = "none";
+}
+
+function loadMessages() {
+  fetch(`/league/${leagueId}/chat`)
+    .then(res => res.json())
+    .then(messages => {
+      console.log("MESSAGGI ricevuti:", messages);
+      chatMessages.innerHTML = '';
+      messages.forEach(m => {
+        chatMessages.innerHTML += `
+          <div style="background:#eee;color:#222;padding:4px;margin:3px;">
+            <strong>${m.user}:</strong> ${m.message}
+            <span style="font-size:0.8em;color:#666;margin-left:8px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+          </div>`;
+      });
+      if(messages.length > 0) {
+        lastSeenMessageId = messages[messages.length - 1].id;
+      }
+      unreadCount = 0;
+      updateBadge();
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+}
+
+function checkNewMessages() {
+  fetch(`/league/${leagueId}/chat`)
+    .then(res => res.json())
+    .then(messages => {
+      // Se non ci sono messaggi o non abbiamo ancora visto messaggi, non fare nulla
+      if(messages.length === 0) return;
+      
+      // Inizializza lastSeenMessageId al primo caricamento
+      if(lastSeenMessageId === null) {
+        lastSeenMessageId = messages[messages.length - 1].id;
+        return;
+      }
+      
+      // Controlla se ci sono nuovi messaggi
+      const newMessages = messages.filter(m => m.id > lastSeenMessageId);
+      if(newMessages.length > 0) {
+        unreadCount += newMessages.length;
+        updateBadge();
+        // Aggiorna lastSeenMessageId all'ultimo messaggio ricevuto
+        lastSeenMessageId = messages[messages.length - 1].id;
+      }
+    });
+}
+
+chatBtn.onclick = () => {
+  if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
+    chatFloat.style.display = "block";
+    unreadCount = 0;
+    updateBadge();
+    loadMessages();
+  } else {
+    chatFloat.style.display = "none";
+  }
+};
+
+chatForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const msg = chatInput.value.trim();
+  if(!msg) return;
+  fetch(`/league/${leagueId}/chat`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({message: msg})
+  })
+  .then(res => res.json())
+  .then(() => {
+    chatInput.value = '';
+    loadMessages();
+  });
+});
+
+// Polling per nuovi messaggi ogni 4 secondi
+setInterval(() => {
+  if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
+    // Chat chiusa: controlla nuovi messaggi
+    checkNewMessages();
+  } else {
+    // Chat aperta: ricarica messaggi
+    loadMessages();
+  }
+}, 4000);
+
+// Carica messaggi iniziali senza incrementare il badge
+fetch(`/league/${leagueId}/chat`)
+  .then(res => res.json())
+  .then(messages => {
+    if(messages.length > 0) {
+      lastSeenMessageId = messages[messages.length - 1].id;
+    }
+  });
+</script>
 
 <main>
   <h2>Classifica Membri</h2>
   {% if members %}
-  <table>
+  <table class="table-ranking">
     <thead>
-      <tr>
-        <th>Posizione</th>
-        <th>Nome</th>
-        <th>Età</th>
-        <th>Punteggio</th>
-      </tr>
+      <tr><th>Posizione</th><th>Nome</th><th>Punteggio</th></tr>
     </thead>
     <tbody>
       {% for member in members %}
       <tr>
         <td>{{ loop.index }}</td>
         <td>{{ member.name }}</td>
-        <td>{{ member.age or '-' }}</td>
         <td><strong>{{ "%.2f"|format(member.total_score) }}</strong></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-    <p style="text-align: center; opacity: 0.7;">Nessun membro ancora</p>
+    <p class="no-data">Nessun membro ancora</p>
   {% endif %}
-  
+
   <h2 style="margin-top: 3rem;">Fattori di Valutazione</h2>
   {% if factors %}
-  <table>
+  <table class="table-ranking">
     <thead>
-      <tr>
-        <th>Fattore</th>
-        <th>Descrizione</th>
-        <th>Peso</th>
-      </tr>
+      <tr><th>Fattore</th><th>Descrizione</th><th>Peso</th></tr>
     </thead>
     <tbody>
       {% for factor in factors %}
@@ -107,57 +232,7 @@
     </tbody>
   </table>
   {% else %}
-    <p style="text-align: center; opacity: 0.7;">Nessun fattore definito</p>
+    <p class="no-data">Nessun fattore definito</p>
   {% endif %}
 </main>
 {% endblock %}
-<script>
-const leagueId = "{{ league.id }}";
-const chatMessages = document.getElementById("chat-messages");
-const chatForm = document.getElementById("chat-form");
-const chatInput = document.getElementById("chat-input");
-const chatFloat = document.getElementById("chat-float");
-const chatBtn = document.getElementById("toggle-chat");
-
-function loadMessages() {
-    fetch(`/league/${leagueId}/chat`)
-      .then(r => r.json())
-      .then(messages => {
-        chatMessages.innerHTML = '';
-        messages.forEach(m => {
-          chatMessages.innerHTML += `
-            <div style="margin-bottom:8px;">
-              <b>${m.user}:</b> ${m.message} 
-              <span style="font-size:0.8em;color:#bcbcbc;">${new Date(m.created_at).toLocaleTimeString()}</span>
-            </div>`;
-        });
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-}
-
-// Toggle chat open/close
-chatBtn.onclick = () => {
-  if(chatFloat.style.display=="none"){ chatFloat.style.display="block"; loadMessages();}
-  else { chatFloat.style.display="none";}
-};
-function closeChat() { chatFloat.style.display="none"; }
-
-// Invia messaggio
-chatForm.addEventListener("submit", function(e) {
-    e.preventDefault();
-    const msg = chatInput.value.trim();
-    if (!msg) return;
-    fetch(`/league/${leagueId}/chat`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({message: msg})
-    })
-    .then(r => r.json())
-    .then(() => {
-      chatInput.value = '';
-      loadMessages();
-    });
-});
-
-setInterval(() => { if(chatFloat.style.display==="block") loadMessages(); }, 4000);
-</script>

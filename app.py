@@ -1,9 +1,10 @@
 import os
 from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 from PIL import Image, ImageDraw
 default_dir = os.path.join('static')
@@ -14,6 +15,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 from mailtrap import MailtrapClient, Mail, Address
 import logging
+
 
 try:
     from PIL import Image, ImageDraw
@@ -35,15 +37,9 @@ app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-# app.config['MAIL_SERVER']='send.api.mailtrap.io'
-# app.config['MAIL_PORT'] = 587
-# app.config['MAIL_USERNAME'] = 'api'
-# app.config['MAIL_PASSWORD'] = 'Bearer 616b82792c3fd1696348a9d3f3ff382b616b82792c3fd1696348a9d3f3ff382b'
-# app.config['MAIL_USE_TLS'] = True
-# app.config['MAIL_USE_SSL'] = False
-# mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
 
 
 google_bp = make_google_blueprint(
@@ -67,6 +63,8 @@ class User(db.Model):
     owned_leagues = db.relationship('League', backref='owner', lazy=True, foreign_keys='League.owner_id')
     memberships = db.relationship('LeagueMember', backref='user', lazy=True)
     votes = db.relationship('FactorVote', backref='voter', lazy=True)
+    reset_token = db.Column(db.String(100), unique=True)
+    reset_token_expiry = db.Column(db.DateTime)
 
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,6 +76,16 @@ class League(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     members = db.relationship('LeagueMember', backref='league', lazy=True, cascade='all, delete-orphan')
     factors = db.relationship('Factor', backref='league', lazy=True, cascade='all, delete-orphan')
+    password_hash = db.Column(db.String(128), nullable=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        if not self.password_hash:
+            return False
+        return check_password_hash(self.password_hash, password)
+    
 class LeagueChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
@@ -125,6 +133,34 @@ class PendingVote(db.Model):
     factor_id = db.Column(db.Integer, db.ForeignKey('factor.id'), nullable=False)
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+def init_database():
+
+    with app.app_context():
+        db.create_all()  
+        
+        
+        try:
+            with db.engine.connect() as conn:
+                result = conn.execute(text("PRAGMA table_info(user)")).fetchall()
+                columns = [row[1] for row in result]
+                
+                if 'reset_token' not in columns:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN reset_token VARCHAR(100)"))
+                    print("✅ Colonna reset_token aggiunta")
+                
+                if 'reset_token_expiry' not in columns:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN reset_token_expiry DATETIME"))
+                    print("✅ Colonna reset_token_expiry aggiunta")
+                
+                conn.commit()
+        except Exception as e:
+            print(f"Info database: {e}")
+
+
+init_database()
+
 
 def generate_league_code():
     """Genera un codice univoco per la lega"""
@@ -175,9 +211,218 @@ def calculate_member_scores(league_id):
     
     db.session.commit()
 
+
+
+reset_password_html_template = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {{
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #ff5ace 0%, #ffa3d7 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0;
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+        }}
+        .content {{
+            padding: 40px 30px;
+        }}
+        .content h2 {{
+            color: #ff5ace;
+            margin-top: 0;
+        }}
+        .content p {{
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }}
+        .button {{
+            display: inline-block;
+            background: #ff5ace;
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+        }}
+        .button:hover {{
+            background: #e143a3;
+        }}
+        .footer {{
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }}
+        .warning {{
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>FantaMatrimonio</h1>
+        </div>
+        <div class="content">
+            <h2>Ciao {username}!</h2>
+            <p>Hai richiesto di reimpostare la tua password su <strong>FantaMatrimonio</strong>.</p>
+            <p>Clicca sul pulsante qui sotto per reimpostare la password. Il link è valido per <strong>1 ora</strong>:</p>
+            <div style="text-align: center;">
+                <a href="{reset_url}" class="button">Reimposta Password</a>
+            </div>
+            <div class="warning">
+                <p style="margin: 0;"><strong>⚠️ Importante:</strong> Se non hai richiesto questa reimpostazione, puoi ignorare tranquillamente questa email. La tua password rimarrà invariata.</p>
+            </div>
+            <p>Se il pulsante non funziona, copia e incolla questo link nel browser:</p>
+            <p style="word-break: break-all; font-size: 14px; color: #666;">{reset_url}</p>
+        </div>
+        <div class="footer">
+            <p><strong>Il Team di FantaMatrimonio</strong></p>
+            <p><em>Il gioco di scommesse più divertente e goliardico!</em></p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+def send_reset_password_email(user_email, username, reset_url):
+    """Invia email di reset password tramite Mailtrap"""
+    try:
+        mail = Mail(
+            sender=Address(email="noreply@therealfantamatrimonio.it", name="FantaMatrimonio"),
+            to=[Address(email=user_email)],
+            subject="Reimposta la tua password - FantaMatrimonio",
+            html=reset_password_html_template.format(username=username, reset_url=reset_url),
+            category="password_reset"
+        )
+        client = MailtrapClient(token="616b82792c3fd1696348a9d3f3ff382b")
+        response = client.send(mail)
+        return True
+    except Exception as e:
+        print(f"Errore invio email reset password: {e}")
+        return False
+
+
+
+# Route per richiedere reset password
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        username = request.form.get("username")
+        email = request.form.get("email")
+        
+        # Verifica che username ed email corrispondano
+        user = User.query.filter_by(username=username, email=email).first()
+        
+        if user:
+            # Genera token univoco
+            token = secrets.token_urlsafe(32)
+            user.reset_token = token
+            user.reset_token_expiry = datetime.now() + timedelta(hours=1)  # Valido 1 ora
+            db.session.commit()
+            
+            # Invia email
+            reset_url = url_for('reset_password', token=token, _external=True)
+            
+            if send_reset_password_email(user.email, user.username, reset_url):
+                flash("Email di reimpostazione inviata! Controlla la tua casella di posta.", "success")
+            else:
+                flash("Errore nell'invio dell'email. Riprova più tardi.", "danger")
+                return redirect(url_for('forgot_password'))
+        else:
+            # Per sicurezza, non specificare se username o email sono sbagliati
+            flash("Se username ed email corrispondono, riceverai un'email di reimpostazione.", "info")
+        
+        return redirect(url_for('login'))
+    
+    return render_template("forgot_password.html")
+
+
+# Route per reimpostare la password con il token
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    user = User.query.filter_by(reset_token=token).first()
+    
+    # Verifica token valido e non scaduto
+    if not user or not user.reset_token_expiry or user.reset_token_expiry < datetime.now():
+        flash("Link di reimpostazione non valido o scaduto.", "danger")
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == "POST":
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+        
+        if new_password != confirm_password:
+            flash("Le password non corrispondono.", "danger")
+            return redirect(url_for('reset_password', token=token))
+        
+        if len(new_password) < 6:
+            flash("La password deve essere di almeno 6 caratteri.", "warning")
+            return redirect(url_for('reset_password', token=token))
+        
+        # Aggiorna password
+        user.set_password(new_password)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+        
+        flash("Password reimpostata con successo! Ora puoi effettuare il login.", "success")
+        return redirect(url_for('login'))
+    
+    return render_template("reset_password.html", token=token)
+
+
 @app.route("/")
 def home():
-    return render_template("index.html")
+    search_query = request.args.get('search', '').strip()
+    
+    if search_query:
+        # Cerca per nome lega o username del proprietario
+        leagues = League.query.join(User, League.owner_id == User.id).filter(
+            db.or_(
+                League.name.ilike(f'%{search_query}%'),
+                User.username.ilike(f'%{search_query}%')
+            ),
+            League.is_active == True
+        ).all()
+    else:
+        # Mostra tutte le leghe attive
+        leagues = League.query.filter_by(is_active=True).all()
+    
+    return render_template("index.html", leagues=leagues, search_query=search_query)
+
+@app.route("/rules")
+def rules():
+    return render_template("rules.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -202,32 +447,79 @@ def login():
 
 confirmation_html_template = """
 <!DOCTYPE html>
-<html lang="it">
-<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
-<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
-  <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-    <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
-    <p>Ciao {username},</p>
-    <p>Per attivare il tuo account clicca sul pulsante qui sotto:</p>
-    <p style="text-align:center;">
-      <a href="{confirm_url}" style="display:inline-block; padding:12px 25px; background:#3498db; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">Conferma la Registrazione</a>
-    </p>
-    <p>Se non hai richiesto questa registrazione, puoi ignorare questa email.</p>
-    <footer style="margin-top:40px; font-size:12px; color:#999; text-align:center;">
-      FantaMatrimonio - Tutti i diritti riservati &copy; 2025
-    </footer>
-  </div>
-</body>
-</html>
-"""
-
-
-
-confirmation_html_template = """
-<!DOCTYPE html>
-<html lang="it">
-<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
-<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {{
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #ff5ace 0%, #ffa3d7 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0;
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+        }}
+        .content {{
+            padding: 40px 30px;
+        }}
+        .content h2 {{
+            color: #ff5ace;
+            margin-top: 0;
+        }}
+        .content p {{
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }}
+        .button {{
+            display: inline-block;
+            background: #ff5ace;
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+        }}
+        .button:hover {{
+            background: #e143a3;
+        }}
+        .footer {{
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }}
+        .warning {{
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }}
+    </style>
+</head>
+<body>
   <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
     <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
     <p>Ciao {username},</p>
@@ -251,7 +543,6 @@ def register():
             username = request.form.get("username")
             email = request.form.get("email")
             password = request.form.get("password")
-            # Validazioni e creazione utente
             if User.query.filter_by(username=username).first():
                 flash("Username già esistente", "danger")
                 return render_template("register.html")
@@ -269,19 +560,14 @@ def register():
                 is_verified=False,
                 email_token=token
             )
-            # db.session.add(user)
-            # db.session.commit()
-
-            # Link di conferma
+            
             link = url_for('confirm_email', token=token, _external=True)
-
-            # Invio email di conferma
             mail = Mail(
                 sender=Address(email="noreply@therealfantamatrimonio.it", name="FantaMatrimonio"),
                 to=[Address(email=email)],
                 subject="Conferma la tua email per FantaMatrimonio!",
                 html=confirmation_html_template.format(username=username, confirm_url=link),
-                category="User Registration"
+                category="register"
             )
             client = MailtrapClient(token="616b82792c3fd1696348a9d3f3ff382b")
             response = client.send(mail)
@@ -297,6 +583,46 @@ def register():
         return render_template("register.html")
 
 
+
+@app.route('/update_username', methods=['POST'])
+def update_username():
+    if 'user_id' not in session:
+        flash("Effettua il login per continuare", "warning")
+        return redirect(url_for('login'))
+    new_username = request.form.get('username')
+    if not new_username or len(new_username) > 120:
+        flash("Nome utente non valido", "danger")
+        return redirect(url_for('profilo'))
+    existing = User.query.filter_by(username=new_username).first()
+    if existing and existing.id != session['user_id']:
+        flash("Nome utente già utilizzato", "danger")
+        return redirect(url_for('profilo'))
+    user = User.query.get(session['user_id'])
+    user.username = new_username
+    db.session.commit()
+    session['username'] = new_username
+    flash("Nome utente aggiornato con successo", "success")
+    return redirect(url_for('profilo'))
+
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        flash("Effettua il login per continuare", "warning")
+        return redirect(url_for('login'))
+    current_password = request.form.get('current_password')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+    user = User.query.get(session['user_id'])
+    if not user or not check_password_hash(user.password_hash, current_password):
+        flash("Password attuale errata", "danger")
+        return redirect(url_for('profilo'))
+    if new_password != confirm_password:
+        flash("La nuova password e la conferma non corrispondono", "danger")
+        return redirect(url_for('profilo'))
+    user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+    flash("Password aggiornata con successo", "success")
+    return redirect(url_for('profilo'))
 
 
 @app.route("/google_login")
@@ -340,7 +666,7 @@ def google_login():
     except Exception as e:
         return f"Errore interno Google login: {str(e)}", 500
     
-@app.route("/league/<int:league_id>/chat", methods=["GET", "POST"])
+@app.route("/league/<league_id>/chat", methods=["GET", "POST"])
 def league_chat(league_id):
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -478,6 +804,7 @@ def create_league():
     if request.method == "POST":
         name = request.form.get("name")
         description = request.form.get("description")
+        password = request.form.get("password")
         
         league = League(
             name=name,
@@ -485,6 +812,8 @@ def create_league():
             code=generate_league_code(),
             owner_id=session['user_id']
         )
+        if password:
+            league.set_password(password)
         db.session.add(league)
         db.session.commit()
         
@@ -496,6 +825,36 @@ def create_league():
     
     return render_template("create_league.html")
 
+@app.route("/league/<int:league_id>")
+def league_detail(league_id):
+    if 'user_id' not in session:
+        flash("Effettua prima il login", "warning")
+        return redirect(url_for("login"))
+    
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("Lega non trovata", "danger")
+        return redirect(url_for("dashboard"))
+    
+    # Recupera membri ordinati per punteggio
+    members = LeagueMember.query.filter_by(league_id=league_id).order_by(LeagueMember.total_score.desc()).all()
+    
+    # Recupera i fattori della lega
+    factors = Factor.query.filter_by(league_id=league_id).all()
+    
+    # Verifica se l'utente loggato è membro o proprietario
+    is_member = LeagueMember.query.filter_by(league_id=league_id, user_id=session['user_id']).first() is not None
+    is_owner = (league.owner_id == session['user_id'])
+    
+    return render_template(
+        "league_detail.html", 
+        league=league, 
+        members=members, 
+        factors=factors, 
+        is_member=is_member, 
+        is_owner=is_owner
+    )
+
 @app.route("/league/join", methods=["GET", "POST"])
 def join_league():
     if 'user_id' not in session:
@@ -503,90 +862,56 @@ def join_league():
         return redirect(url_for("login"))
     
     if request.method == "POST":
-        code = request.form.get("code").upper()
+        code = request.form.get("code", "").upper().strip()
+        password = request.form.get("password", "")
+        
+        if not code:
+            flash("Inserisci il codice della lega", "danger")
+            return redirect(url_for("join_league"))
+        
         league = League.query.filter_by(code=code).first()
         
         if not league:
             flash("Codice lega non valido", "danger")
-        elif LeagueMember.query.filter_by(league_id=league.id, user_id=session['user_id']).first():
-            flash("Sei già membro di questa lega", "warning")
-        else:
-            user = User.query.get(session['user_id'])
-            member = LeagueMember(
-                league_id=league.id,
-                user_id=user.id,
-                name=user.username,
-                avatar=user.avatar
-            )
-            db.session.add(member)
-            db.session.commit()
-            flash(f"Sei entrato nella lega '{league.name}'!", "success")
-            return redirect(url_for("league_detail", league_id=league.id))
-    
-    return render_template("join_league.html")
-
-@app.route("/league/<int:league_id>")
-def league_detail(league_id):
-    if 'user_id' not in session:
-        flash("Effettua prima il login", "warning")
-        return redirect(url_for("login"))
-    
-    league = League.query.get_or_404(league_id)
-    members = LeagueMember.query.filter_by(league_id=league_id).order_by(LeagueMember.total_score.desc()).all()
-    factors = Factor.query.filter_by(league_id=league_id).all()
-    
-    is_owner = league.owner_id == session['user_id']
-    is_member = LeagueMember.query.filter_by(league_id=league_id, user_id=session['user_id']).first() is not None
-    
-    return render_template("league_detail.html",
-                         league=league,
-                         members=members,
-                         factors=factors,
-                         is_owner=is_owner,
-                         is_member=is_member)
-
-@app.route("/league/<int:league_id>/vote", methods=["GET", "POST"])
-def vote(league_id):
-    if 'user_id' not in session:
-        flash("Effettua prima il login", "warning")
-        return redirect(url_for("login"))
-    
-    league = League.query.get_or_404(league_id)
-    members = LeagueMember.query.filter_by(league_id=league_id, is_competing=True).all()
-    factors = Factor.query.filter_by(league_id=league_id).all()
-    
-    if request.method == "POST":
-        for member in members:
-            for factor in factors:
-                score_key = f"score_{member.id}_{factor.id}"
-                score = request.form.get(score_key)
-                
-                if score:
-                    # Elimina voto precedente se esiste
-                    old_vote = FactorVote.query.filter_by(
-                        factor_id=factor.id,
-                        member_id=member.id,
-                        voter_id=session['user_id']
-                    ).first()
-                    
-                    if old_vote:
-                        db.session.delete(old_vote)
-                    
-                    # Crea nuovo voto
-                    vote = FactorVote(
-                        factor_id=factor.id,
-                        member_id=member.id,
-                        voter_id=session['user_id'],
-                        score=float(score)
-                    )
-                    db.session.add(vote)
+            return redirect(url_for("join_league"))
         
+        # Controlla se l'utente è già membro
+        existing_member = LeagueMember.query.filter_by(
+            league_id=league.id, 
+            user_id=session['user_id']
+        ).first()
+        
+        if existing_member:
+            flash("Sei già membro di questa lega", "warning")
+            return redirect(url_for("league_detail", league_id=league.id))
+        
+        # IMPORTANTE: Verifica password se la lega è protetta
+        if league.password_hash:
+            if not password:
+                flash("Questa lega richiede una password", "danger")
+                return redirect(url_for("join_league"))
+            
+            if not league.check_password(password):
+                flash("Password errata. Contatta l'amministratore della lega.", "danger")
+                return redirect(url_for("join_league"))
+        
+        # Aggiungi l'utente alla lega
+        user = User.query.get(session['user_id'])
+        member = LeagueMember(
+            league_id=league.id,
+            user_id=user.id,
+            name=user.username,
+            avatar=user.avatar
+        )
+        db.session.add(member)
         db.session.commit()
-        calculate_member_scores(league_id)
-        flash("Voti registrati con successo!", "success")
-        return redirect(url_for("league_detail", league_id=league_id))
+        
+        flash(f"Sei entrato nella lega '{league.name}'!", "success")
+        return redirect(url_for("league_detail", league_id=league.id))
     
-    return render_template("vote.html", league=league, members=members, factors=factors)
+    # GET - mostra tutte le leghe disponibili
+    leagues = League.query.filter_by(is_active=True).all()
+    return render_template("join_league.html", leagues=leagues)
 
 # ============================================
 # ROUTES - Amministrazione Lega
@@ -695,6 +1020,63 @@ def upload_avatar():
     else:
         flash("Formato file non valido. Usa PNG, JPG, JPEG, GIF o WEBP", "danger")
         return redirect(url_for("dashboard"))
+@app.route("/league/<int:league_id>/vote", methods=["GET", "POST"])
+def vote(league_id):
+    if 'user_id' not in session:
+        flash("Effettua prima il login", "warning")
+        return redirect(url_for("login"))
+    
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("Lega non trovata", "danger")
+        return redirect(url_for("dashboard"))
+    
+    members = LeagueMember.query.filter_by(league_id=league_id, is_competing=True).all()
+    factors = Factor.query.filter_by(league_id=league_id).all()
+
+    if request.method == "POST":
+        try:
+            for member in members:
+                # Evita l'autovoto
+                if member.user_id == session['user_id']:
+                    continue
+                
+                for factor in factors:
+                    score_key = f"score_{member.id}_{factor.id}"
+                    score = request.form.get(score_key)
+                    
+                    if score:
+                        existing_vote = FactorVote.query.filter_by(
+                            factor_id=factor.id,
+                            member_id=member.id,
+                            voter_id=session['user_id']
+                        ).first()
+                        
+                        if existing_vote:
+                            existing_vote.score = float(score)
+                        else:
+                            new_vote = FactorVote(
+                                factor_id=factor.id,
+                                member_id=member.id,
+                                voter_id=session['user_id'],
+                                score=float(score)
+                            )
+                            db.session.add(new_vote)
+            
+            db.session.commit()
+            calculate_member_scores(league_id)
+            flash("Voti registrati con successo!", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Errore durante la registrazione dei voti: {str(e)}", "danger")
+        
+        return redirect(url_for("league_detail", league_id=league_id))
+
+    # Escludi l'utente loggato dalla visualizzazione
+    filtered_members = [m for m in members if m.user_id != session['user_id']]
+    return render_template("vote.html", league=league, members=filtered_members, factors=factors)
+    
+        
 @app.route("/privacy")
 def privacy_policy():
     return render_template("privacy_policy.html")

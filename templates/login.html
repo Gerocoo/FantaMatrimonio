@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+
 {% block title %}Login - FantaMatrimonio{% endblock %}
 {% block content %}
 <p style="font-size: 0.9rem; text-align:center; margin-top:2rem;">
   Continuando dichiari di avere letto e accettato le
   <a href="{{ url_for('privacy_policy') }}" target="_blank" style="color: var(--primary); text-decoration: underline;">Norme sulla privacy</a>.
 </p>
-<form method="post">
+<form method="post" class="login">
   <h2>Login</h2>
   <input type="text" name="username" placeholder="Username" required />
   <input type="password" name="password" placeholder="Password" required />
@@ -15,6 +16,12 @@
     <img src="{{ url_for('static', filename='google-icon.png') }}" alt="Google">
     Login con Google
   </a>
+   <p style="text-align: center; margin-top: 1rem;">
+    Password dimenticata? 
+    <a href="{{ url_for('forgot_password') }}" style="color: var(--primary); font-weight: 600;">
+      Reimpostala
+    </a>
+  </p>
   <p>Non hai un account? <a href="{{ url_for('register') }}">Registrati</a></p>
 </form>
 {% endblock %}

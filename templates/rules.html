@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Regole - FantaMatrimonio{% endblock %}
+{% block content %}
+
+<div class="banner-lilla" style="padding: 3rem 2rem;">
+  <h1>Regole del Gioco</h1>
+  <p>Tutto quello che devi sapere per giocare a FantaMatrimonio</p>
+</div>
+
+<main style="max-width: 900px; margin: 3rem auto; padding: 0 2rem;">
+  
+  <section style="margin-bottom: 3rem;">
+    <h2 style="color: var(--primary); font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 1rem;">
+      Che cos'è FantaMatrimonio?
+    </h2>
+    <p style="font-size: 1.1rem; line-height: 1.8;">
+      FantaMatrimonio è un gioco ironico e divertente che permette di scommettere sulla probabilità di matrimonio 
+      dei tuoi amici. Ogni giocatore partecipa creando il proprio avatar e iscrivendosi a una Lega. 
+      I punti vengono assegnati in base a una serie di fattori che, secondo il gioco, influenzano la probabilità di matrimonio.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 3rem;">
+    <h2 style="color: var(--primary); font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 1rem;">
+      Come funziona?
+    </h2>
+    
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 2rem 0 1rem;">
+      1. La Lega
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li>Crea o unisciti a una Lega con i tuoi amici</li>
+      <li>Ogni Lega ha un suo regolamento interno, che può includere modifiche ai punteggi standard</li>
+      <li>I punteggi vengono decisi dalla maggioranza della Lega, non da un singolo giocatore</li>
+      <li>La Lega può essere composta da amici single, fidanzati o entrambi</li>
+    </ul>
+
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 2rem 0 1rem;">
+      2. I Giocatori
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li>Ogni giocatore crea il proprio avatar</li>
+      <li>Il gioco è per l'assoluta inclusività - tutti possono partecipare!</li>
+    </ul>
+
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 2rem 0 1rem;">
+      3. I Fattori
+    </h3>
+    <p style="line-height: 1.8;">
+      I fattori che influenzano la probabilità di matrimonio sono suddivisi in diverse categorie:
+    </p>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li><strong>Stabilità individuale:</strong> età, titoli di studio, reddito, stabilità lavorativa, carattere</li>
+      <li><strong>Fattori relazionali:</strong> durata della relazione, convivenza, figli in comune, desiderio di sposarsi</li>
+      <li><strong>Personalità e stili di vita:</strong> hobby in comune, desiderio di avere figli, compatibilità</li>
+      <li><strong>Fattori esterni:</strong> influenza della famiglia e degli amici, eventi imprevisti</li>
+      <li><strong>Gruppo di amici:</strong> presenza di single nel gruppo, supporto nella ricerca di un partner</li>
+    </ul>
+    <p style="line-height: 1.8; margin-top: 1rem;">
+      Ogni fattore ha un punteggio assegnato, che può essere modificato dalla Lega in un range da <strong>-100 a +100</strong>.
+    </p>
+
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 2rem 0 1rem;">
+      4. Il Punteggio
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li>Il punteggio di ogni giocatore è la somma di tutti i punti assegnati ai fattori</li>
+      <li>Il giocatore con il punteggio più alto ha maggiori possibilità di sposarsi (secondo il gioco!)</li>
+      <li>I punteggi vengono decisi all'inizio e non sono più modificabili se non con l'unanimità della Lega</li>
+      <li><strong>Vince chi si sposa nella realtà!</strong></li>
+    </ul>
+
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 2rem 0 1rem;">
+      5. Premi e Penalità
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li>La Lega può decidere di assegnare premi al vincitore e penalità ai perdenti</li>
+      <li>Premi e penalità sono di natura goliardica e divertente</li>
+      <li>Vengono decisi all'inizio e non sono modificabili se non con l'unanimità</li>
+    </ul>
+  </section>
+
+  <section style="margin-bottom: 3rem;">
+    <h2 style="color: var(--primary); font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 1rem;">
+      Esempi di Fattori
+    </h2>
+    
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.3rem; margin: 2rem 0 1rem;">
+      🎂 Età
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li><strong>20-24 anni:</strong> Cuccioli di panda tra i bambù dell'amore, +20 punti</li>
+      <li><strong>25-29 anni:</strong> Pronti per il grande salto, +40 punti</li>
+      <li><strong>30-34 anni:</strong> Ticchettio dell'orologio biologico, +60 punti</li>
+      <li><strong>35-39 anni:</strong> Ultimi appelli per il matrimonio, +40 punti</li>
+      <li><strong>40+ anni:</strong> Nuovo inizio, +20 punti</li>
+    </ul>
+
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.3rem; margin: 2rem 0 1rem;">
+      🎓 Titoli di Studio
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li><strong>Scuola Media:</strong> Almeno sa leggere e scrivere! +10 punti</li>
+      <li><strong>Diploma:</strong> Primo passo importante, +20 punti</li>
+      <li><strong>Laurea:</strong> Bagaglio di conoscenza da condividere, +40 punti</li>
+      <li><strong>Laurea magistrale/dottorato:</strong> Cervellone al servizio della coppia, +60 punti</li>
+    </ul>
+
+    <h3 style="color: var(--foreground); font-family: 'Montserrat', sans-serif; font-size: 1.3rem; margin: 2rem 0 1rem;">
+      💰 Reddito
+    </h3>
+    <ul style="line-height: 1.8; margin-left: 2rem;">
+      <li><strong>Basso (&lt;20k€/anno):</strong> Amore e bollette non sempre vanno d'accordo, +0 punti</li>
+      <li><strong>Medio (20k-40k€/anno):</strong> Un po' di tranquillità economica, +20 punti</li>
+      <li><strong>Alto (&gt;40k€/anno):</strong> Soldi e amore? Fa sempre comodo! +40 punti</li>
+    </ul>
+
+    <p style="margin-top: 2rem; padding: 1.5rem; background: var(--muted); border-radius: var(--radius); font-style: italic;">
+      <strong>Nota importante:</strong> Questi sono solo esempi! Ogni Lega può decidere i propri fattori e modificare i punteggi. 
+      Il range va da -100 a +100 a seconda delle decisioni dei partecipanti.
+    </p>
+  </section>
+
+  <section style="margin-bottom: 3rem; text-align: center; padding: 3rem; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: calc(var(--radius) * 2); color: white;">
+    <h2 style="font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 1rem; color: white;">
+      Spirito del Gioco
+    </h2>
+    <p style="font-size: 1.1rem; line-height: 1.8; max-width: 700px; margin: 0 auto;">
+      FantaMatrimonio è un gioco <strong>ironico e divertente</strong>, che ha lo scopo di creare un'atmosfera 
+      amichevole e goliardica tra i giocatori. Le scommesse e i punteggi non devono essere presi troppo sul serio, 
+      ma devono essere un modo per scherzare e divertirsi con gli amici. 
+      <strong>Il rispetto reciproco e la sportività sono valori fondamentali!</strong>
+    </p>
+  </section>
+
+  <div style="text-align: center; margin: 3rem 0;">
+    <a href="{{ url_for('home') }}" class="btn btn-primary" style="margin: 0.5rem;">Torna alla Home</a>
+    {% if not session.get('user_id') %}
+      <a href="{{ url_for('register') }}" class="btn btn-secondary" style="margin: 0.5rem;">Registrati</a>
+    {% else %}
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="margin: 0.5rem;">Vai alla Dashboard</a>
+    {% endif %}
+  </div>
+
+  <p style="text-align: center; font-size: 0.9rem; opacity: 0.7; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+    <em>Ogni riferimento a cose o persone è puramente casuale. FantaMatrimonio riconosce la complessità e la diversità 
+    degli argomenti e non intende offendere o ledere nessuno. Lo scopo è solo quello di creare un gioco goliardico 
+    e divertente, senza ledere la dignità di nessuno.</em>
+  </p>
+</main>
+
+{% endblock %}
