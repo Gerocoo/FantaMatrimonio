@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Conferma la tua email - FantaMatrimonio</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; color: #333; margin:0; padding:0; }
+    .container {
+      max-width: 600px;
+      padding: 20px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+    }
+    h1 { color: #e91e63; }
+    a.confirm-button {
+      display: inline-block;
+      text-decoration: none;
+      background: #e91e63;
+      color: white;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 30px;
+    }
+    p {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ciao {{ username }}!</h1>
+    <p>Grazie per esserti registrato su <strong>FantaMatrimonio</strong>.</p>
+    <p>Per attivare il tuo account, ti chiediamo di confermare la tua email cliccando sul pulsante qui sotto:</p>
+    <p style="text-align:center;">
+      <a class="confirm-button" href="{{ confirm_url }}" target="_blank" rel="noopener noreferrer">Conferma la tua email</a>
+    </p>
+    <p>Se non hai richiesto questa registrazione, ignora questa email.</p>
+    <footer>
+      &copy; 2025 FantaMatrimonio. Tutti i diritti riservati.
+    </footer>
+  </div>
+</body>
+</html>

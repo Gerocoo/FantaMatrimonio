@@ -35,12 +35,12 @@ app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-app.config['MAIL_SERVER'] = 'smtp.ionos.it'
+app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
 app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'smtp@mailtrap.io'
+app.config['MAIL_PASSWORD'] = '616b82792c3fd1696348a9d3f3ff382b'
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'register@therealfantamatrimonio.it'
-app.config['MAIL_PASSWORD'] = 'Aeiou123aeiou@@!suca'
-app.config['MAIL_DEFAULT_SENDER'] = 'register@therealfantamatrimonio.it'
+app.config['MAIL_USE_SSL'] = False
 mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -226,7 +226,7 @@ def register():
                 db.session.commit()
                 link = url_for('confirm_email', token=token, _external=True)
                 msg = Message("Conferma la tua email FantaMatrimonio",
-                              sender=app.config['MAIL_USERNAME'],
+                              sender='noreply@therealfantamatrimonio.it',
                               recipients=[email])
                 msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
                 msg.charset = 'utf-8'
@@ -236,7 +236,7 @@ def register():
                 except Exception as e:
                     print("ERRORE EMAIL:", e)
                     flash("Si è verificato un errore nell’invio dell’email di conferma: " + str(e), "danger")
-                    # puoi comunque creare l'utente ma non inviare la mail, decidi tu la UX
+                    
                     return render_template("register.html")
                 return redirect(url_for("login"))
         return render_template("register.html")
