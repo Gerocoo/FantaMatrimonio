@@ -12,7 +12,6 @@ os.makedirs(default_dir, exist_ok=True)
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
-from flask_mail import Mail, Message
 from mailtrap import MailtrapClient, Mail, Address
 import logging
 
@@ -222,7 +221,7 @@ confirmation_html_template = """
 </html>
 """
 
-from mailtrap import Mail, Address, MailtrapClient
+
 
 confirmation_html_template = """
 <!DOCTYPE html>
