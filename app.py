@@ -35,13 +35,6 @@ app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-# app.config['MAIL_SERVER']='send.api.mailtrap.io'
-# app.config['MAIL_PORT'] = 587
-# app.config['MAIL_USERNAME'] = 'api'
-# app.config['MAIL_PASSWORD'] = 'Bearer 616b82792c3fd1696348a9d3f3ff382b616b82792c3fd1696348a9d3f3ff382b'
-# app.config['MAIL_USE_TLS'] = True
-# app.config['MAIL_USE_SSL'] = False
-# mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
@@ -221,29 +214,6 @@ confirmation_html_template = """
 </html>
 """
 
-
-
-confirmation_html_template = """
-<!DOCTYPE html>
-<html lang="it">
-<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
-<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
-  <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-    <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
-    <p>Ciao {username},</p>
-    <p>Per attivare il tuo account clicca sul pulsante qui sotto:</p>
-    <p style="text-align:center;">
-      <a href="{confirm_url}" style="display:inline-block; padding:12px 25px; background:#3498db; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">Conferma la Registrazione</a>
-    </p>
-    <p>Se non hai richiesto questa registrazione, puoi ignorare questa email.</p>
-    <footer style="margin-top:40px; font-size:12px; color:#999; text-align:center;">
-      FantaMatrimonio - Tutti i diritti riservati &copy; 2025
-    </footer>
-  </div>
-</body>
-</html>
-"""
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     try:
@@ -251,7 +221,6 @@ def register():
             username = request.form.get("username")
             email = request.form.get("email")
             password = request.form.get("password")
-            # Validazioni e creazione utente
             if User.query.filter_by(username=username).first():
                 flash("Username già esistente", "danger")
                 return render_template("register.html")
@@ -269,13 +238,8 @@ def register():
                 is_verified=False,
                 email_token=token
             )
-            # db.session.add(user)
-            # db.session.commit()
-
-            # Link di conferma
+            
             link = url_for('confirm_email', token=token, _external=True)
-
-            # Invio email di conferma
             mail = Mail(
                 sender=Address(email="noreply@therealfantamatrimonio.it", name="FantaMatrimonio"),
                 to=[Address(email=email)],
