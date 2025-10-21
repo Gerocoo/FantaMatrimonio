@@ -14,12 +14,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}">
 </head>
 <body>
-  <!-- Navbar -->
   <nav class="navbar">
     <a href="{{ url_for('home') }}" class="brand-logo">FantaMatrimonio</a>
-    
     {% if session.get('user_id') %}
-      <!-- Menu utente loggato -->
       <div class="dropdown">
         <a href="#" id="profileDropdown" onclick="toggleDropdown();return false;">
           <img src="{% if session.get('avatar') and session['avatar'].startswith('http') %}

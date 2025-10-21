@@ -71,15 +71,24 @@ h1, h2, h3, h4, h5, h6 {
    NAVBAR
    ============================================ */
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background: var(--card);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;  
+    padding: 10px 20px;
+    background: #fff;                
+    box-shadow: 0 1px 6px rgba(0,0,0,0.03);
 }
-
+.navbar-buttons {
+    display: flex;
+    gap: 10px;
+}
+.navbar-logo {
+    font-size: 2em;          /* più grande */
+    font-weight: bold;       /* più in risalto */
+    color: #b752b9;          /* un colore più acceso */
+    letter-spacing: 2px;
+    flex: 1;                 /* occupa tutto lo spazio disponibile */
+}
 .brand-logo {
   font-family: "Dancing Script", cursive;
   font-size: 2rem;
@@ -590,4 +599,120 @@ tbody td {
   font-size: 0.85rem;
   color: var(--secondary-foreground);
   letter-spacing: 1px;
+}
+@media (max-width: 480px) {
+    .navbar-logo {
+        font-size: 1.5em;
+    }
+    .navbar-buttons button, 
+    .navbar-buttons .btn {
+        font-size: 1em;
+        padding: 8px 16px;
+    }
+    .navbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .navbar-buttons {
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+}
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;  
+    padding: 16px 24px;
+    background: #fff;                
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    min-height: 72px;
+}
+
+.brand-logo {
+  font-family: "Dancing Script", cursive;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--primary);
+  text-decoration: none;
+  letter-spacing: 2px;
+  transition: transform 0.2s;
+  flex: 1 1 0%;
+  text-align: left;
+  margin-right: 1rem;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+}
+
+.navbar-buttons {
+  display: flex;
+  gap: 14px;
+}
+
+.btn, .btn-primary, .btn-secondary {
+  display: inline-block;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  border-radius: 2rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  margin: 0.5rem 0;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+.btn-primary:hover {
+  background: var(--ring);
+  transform: translateY(-3px);
+}
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.btn-secondary:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* OVERRIDE: responsive NAVBAR */
+@media (max-width: 540px) {
+  .navbar {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 18px 7vw;
+    min-height: unset;
+  }
+  .brand-logo {
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 12px;
+    margin-right: 0;
+  }
+  .navbar-buttons {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+  }
+  .btn, .btn-primary, .btn-secondary {
+    width: 100%;
+    max-width: 95vw;
+    justify-content: center;
+    font-size: 1.15em;
+    margin: 0;
+  }
+}
+
+@media (max-width: 350px) {
+  .brand-logo {font-size: 1.5em;}
 }

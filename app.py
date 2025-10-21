@@ -215,7 +215,8 @@ def register():
                 )
                 db.session.add(user)
                 db.session.commit()
-                link = url_for('confirm_email', token=token, _external=True)
+                with app.test_request_context(base_url="https://therealfantamatrimonio.it"):
+                    link = url_for('confirm_email', token=token, _external=True)
                 msg = Message("Conferma la tua email FantaMatrimonio",
                               sender=app.config['MAIL_USERNAME'],
                               recipients=[email])
