@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 from flask_mail import Mail, Message
+import mailtrap as mt
 import logging
 
 try:
@@ -35,13 +36,13 @@ app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'api'
-app.config['MAIL_PASSWORD'] = '616b82792c3fd1696348a9d3f3ff382b'
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-mail = Mail(app)
+# app.config['MAIL_SERVER']='send.api.mailtrap.io'
+# app.config['MAIL_PORT'] = 587
+# app.config['MAIL_USERNAME'] = 'api'
+# app.config['MAIL_PASSWORD'] = 'Bearer 616b82792c3fd1696348a9d3f3ff382b616b82792c3fd1696348a9d3f3ff382b'
+# app.config['MAIL_USE_TLS'] = True
+# app.config['MAIL_USE_SSL'] = False
+# mail = Mail(app)
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
@@ -226,13 +227,18 @@ def register():
             #     db.session.add(user)
             #     db.session.commit()
             #     link = url_for('confirm_email', token=token, _external=True)
-            msg = Message("Conferma la tua email FantaMatrimonio",
-                            sender='noreply@therealfantamatrimonio.it',
-                            recipients=['gerocoo16@gmail.com'])
-            # msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
-            msg.charset = 'utf-8'
-            mail.send(msg)
-            flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+            mail = mt.Mail(
+            sender=mt.Address(email="hello@therealfantamatrimonio.it", name="Mailtrap Test"),
+            to=[mt.Address(email="gerocoo16@gmail.com")],
+            subject="You are awesome!",
+            text="Congrats for sending test email with Mailtrap!",
+            category="Integration Test",
+            )
+
+            client = mt.MailtrapClient(token="616b82792c3fd1696348a9d3f3ff382b")
+            response = client.send(mail)
+
+            print(response)
             # db.session.add(user)
             # db.session.commit()
             return redirect(url_for("login"))
@@ -644,17 +650,6 @@ def upload_avatar():
 def privacy_policy():
     return render_template("privacy_policy.html")
 
-@app.route("/send-test-mail")
-def send_test_mail():
-    try:
-        msg = Message("Test email da FantaMatrimonio",
-                      sender=app.config['MAIL_USERNAME'],
-                      recipients=["gerocoo16@gmail.com"])
-        msg.body = "Test invio email riuscito!"
-        mail.send(msg)
-        return "Email inviata con successo!"
-    except Exception as e:
-        return f"Errore invio email: {str(e)}"
 
 if __name__ == "__main__":
     with app.app_context():
