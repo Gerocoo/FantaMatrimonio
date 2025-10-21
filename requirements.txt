@@ -5,3 +5,4 @@ Werkzeug==3.0.1
 gunicorn==23.0.0
 Pillow==10.4.0
 Flask-Mail==0.9.1
+mailtrap==1.0.3
