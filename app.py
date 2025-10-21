@@ -78,6 +78,15 @@ class League(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     members = db.relationship('LeagueMember', backref='league', lazy=True, cascade='all, delete-orphan')
     factors = db.relationship('Factor', backref='league', lazy=True, cascade='all, delete-orphan')
+class LeagueChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='messages')
+    league = db.relationship('League', backref='chat_messages')
 
 class LeagueMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -221,12 +230,21 @@ def register():
                               recipients=[email])
                 msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
                 msg.charset = 'utf-8'
-                mail.send(msg)
-                flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+                try:
+                    mail.send(msg)
+                    flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+                except Exception as e:
+                    print("ERRORE EMAIL:", e)
+                    flash("Si è verificato un errore nell’invio dell’email di conferma: " + str(e), "danger")
+                    # puoi comunque creare l'utente ma non inviare la mail, decidi tu la UX
+                    return render_template("register.html")
                 return redirect(url_for("login"))
         return render_template("register.html")
     except Exception as e:
-        return f"ERRORE REGISTRAZIONE: {str(e)}", 500
+        print("ERRORE REGISTRAZIONE:", e)
+        flash("Errore di registrazione: " + str(e), "danger")
+        return render_template("register.html")
+
 
 
 @app.route("/google_login")
@@ -269,6 +287,36 @@ def google_login():
         return redirect(url_for("dashboard"))
     except Exception as e:
         return f"Errore interno Google login: {str(e)}", 500
+    
+@app.route("/league/<int:league_id>/chat", methods=["GET", "POST"])
+def league_chat(league_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if request.method == "POST":
+        data = request.get_json()
+        msg_text = data.get("message")
+        if not msg_text:
+            return jsonify({"error": "Message empty"}), 400
+
+        msg = LeagueChatMessage(
+            league_id=league_id,
+            user_id=session['user_id'],
+            message=msg_text
+        )
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({"success": True, "message_id": msg.id})
+
+    else:  
+        messages = LeagueChatMessage.query.filter_by(league_id=league_id).order_by(LeagueChatMessage.created_at.desc()).limit(50).all()
+        return jsonify([{
+            "id": m.id,
+            "user": m.user.username,
+            "avatar": m.user.avatar,
+            "message": m.message,
+            "created_at": m.created_at.isoformat()
+        } for m in reversed(messages)])
 
 @app.route('/confirm/<token>')
 def confirm_email(token):

@@ -715,3 +715,50 @@ tbody td {
 @media (max-width: 350px) {
   .brand-logo {font-size: 1.5em;}
 }
+
+/* Pulsante flottante (apri/chiudi chat) */
+#toggle-chat {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 9999;
+  background: var(--primary);
+  color: #fff;
+  width: 54px;
+  height: 54px;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+  font-size: 1.7em;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+#toggle-chat:hover {
+  background: var(--ring);
+  transform: scale(1.07);
+}
+
+/* Finestra chat sovrapposta */
+#chat-float {
+  display: none;
+  position: fixed;
+  bottom: 96px;
+  right: 32px;
+  z-index: 9998;
+  width: 330px;
+  max-width: 95vw;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 36px rgba(0,0,0,0.22);
+  border: 2px solid var(--primary);
+  overflow: hidden;
+  animation: showChat 0.25s ease;
+}
+
+/* Animazione apertura */
+@keyframes showChat {
+  0% { opacity: 0; transform: translateY(60px) scale(0.97);}
+  100% { opacity: 1; transform: translateY(0) scale(1);}
+}
+
+/* Topbar della
