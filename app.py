@@ -226,26 +226,20 @@ def register():
             #     db.session.add(user)
             #     db.session.commit()
             #     link = url_for('confirm_email', token=token, _external=True)
-            try:
-                msg = Message("Conferma la tua email FantaMatrimonio",
-                              sender='noreply@therealfantamatrimonio.it',
-                              recipients=['gerocoo16@gmail.com'])
-                # msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
-                msg.charset = 'utf-8'
-                mail.send(msg)
-                flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
-                # db.session.add(user)
-                # db.session.commit()
-            except Exception as e:
-                print("ERRORE EMAIL:", e)
-                flash("Si è verificato un errore nell’invio dell’email di conferma: " + str(e), "danger")
-
-                return render_template("register.html")
+            msg = Message("Conferma la tua email FantaMatrimonio",
+                            sender='noreply@therealfantamatrimonio.it',
+                            recipients=['gerocoo16@gmail.com'])
+            # msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
+            msg.charset = 'utf-8'
+            mail.send(msg)
+            flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+            # db.session.add(user)
+            # db.session.commit()
             return redirect(url_for("login"))
         return render_template("register.html")
     except Exception as e:
         print("ERRORE REGISTRAZIONE:", e)
-        flash("Errore di registrazione: " + str(e), "danger")
+        #flash("Errore di registrazione: " + str(e), "danger")
         return render_template("register.html")
 
 
