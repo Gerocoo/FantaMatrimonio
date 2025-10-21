@@ -37,7 +37,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
 app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'smtp@mailtrap.io'
+app.config['MAIL_USERNAME'] = 'api'
 app.config['MAIL_PASSWORD'] = '616b82792c3fd1696348a9d3f3ff382b'
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
@@ -232,7 +232,6 @@ def register():
                               recipients=['gerocoo16@gmail.com'])
                 # msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
                 msg.charset = 'utf-8'
-
                 mail.send(msg)
                 flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
                 # db.session.add(user)
