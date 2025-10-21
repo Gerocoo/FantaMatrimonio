@@ -203,6 +203,7 @@ def login():
 def register():
     try:
         if request.method == "POST":
+            # Example commented out code for registration
             # username = request.form.get("username")
             # email = request.form.get("email")
             # password = request.form.get("password")
@@ -224,24 +225,24 @@ def register():
             #     )
             #     db.session.add(user)
             #     db.session.commit()
-                # link = url_for('confirm_email', token=token, _external=True)
-                try:
-                    msg = Message("Conferma la tua email FantaMatrimonio",
+            #     link = url_for('confirm_email', token=token, _external=True)
+            try:
+                msg = Message("Conferma la tua email FantaMatrimonio",
                               sender='noreply@therealfantamatrimonio.it',
-                              recipients='gerocoo16@gmail.com')
+                              recipients=['gerocoo16@gmail.com'])
                 # msg.body = f"Ciao {username},\n\nPer attivare il tuo account clicca su questo link:\n{link}\n\nSe non sei stato tu ignora questa email."
-                    msg.charset = 'utf-8'
-                
-                    mail.send(msg)
-                    flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
-                    # db.session.add(user)
-                    # db.session.commit()
-                except Exception as e:
-                    print("ERRORE EMAIL:", e)
-                    flash("Si è verificato un errore nell’invio dell’email di conferma: " + str(e), "danger")
-                    
-                    return render_template("register.html")
-                return redirect(url_for("login"))
+                msg.charset = 'utf-8'
+
+                mail.send(msg)
+                flash("Registrazione effettuata! Controlla la tua mail per confermare l'account.", "info")
+                # db.session.add(user)
+                # db.session.commit()
+            except Exception as e:
+                print("ERRORE EMAIL:", e)
+                flash("Si è verificato un errore nell’invio dell’email di conferma: " + str(e), "danger")
+
+                return render_template("register.html")
+            return redirect(url_for("login"))
         return render_template("register.html")
     except Exception as e:
         print("ERRORE REGISTRAZIONE:", e)
