@@ -330,9 +330,6 @@ def send_reset_password_email(user_email, username, reset_url):
         print(f"Errore invio email reset password: {e}")
         return False
 
-
-
-# Route per richiedere reset password
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -447,79 +444,32 @@ def login():
 
 confirmation_html_template = """
 <!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {{
-            font-family: 'Arial', sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-        }}
-        .container {{
-            max-width: 600px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }}
-        .header {{
-            background: linear-gradient(135deg, #ff5ace 0%, #ffa3d7 100%);
-            padding: 40px 20px;
-            text-align: center;
-        }}
-        .header h1 {{
-            color: white;
-            margin: 0;
-            font-family: 'Dancing Script', cursive;
-            font-size: 2.5rem;
-        }}
-        .content {{
-            padding: 40px 30px;
-        }}
-        .content h2 {{
-            color: #ff5ace;
-            margin-top: 0;
-        }}
-        .content p {{
-            font-size: 16px;
-            line-height: 1.6;
-            color: #333;
-        }}
-        .button {{
-            display: inline-block;
-            background: #ff5ace;
-            color: white;
-            padding: 15px 40px;
-            text-decoration: none;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: 16px;
-            margin: 20px 0;
-        }}
-        .button:hover {{
-            background: #e143a3;
-        }}
-        .footer {{
-            background: #f5f5f5;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #999;
-        }}
-        .warning {{
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }}
-    </style>
-</head>
-<body>
+<html lang="it">
+<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
+<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
+  <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+    <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
+    <p>Ciao {username},</p>
+    <p>Per attivare il tuo account clicca sul pulsante qui sotto:</p>
+    <p style="text-align:center;">
+      <a href="{confirm_url}" style="display:inline-block; padding:12px 25px; background:#3498db; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">Conferma la Registrazione</a>
+    </p>
+    <p>Se non hai richiesto questa registrazione, puoi ignorare questa email.</p>
+    <footer style="margin-top:40px; font-size:12px; color:#999; text-align:center;">
+      FantaMatrimonio - Tutti i diritti riservati &copy; 2025
+    </footer>
+  </div>
+</body>
+</html>
+"""
+
+
+
+confirmation_html_template = """
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
+<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
   <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
     <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
     <p>Ciao {username},</p>
