@@ -442,28 +442,6 @@ def login():
     return render_template("login.html")
 
 
-confirmation_html_template = """
-<!DOCTYPE html>
-<html lang="it">
-<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
-<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
-  <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-    <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
-    <p>Ciao {username},</p>
-    <p>Per attivare il tuo account clicca sul pulsante qui sotto:</p>
-    <p style="text-align:center;">
-      <a href="{confirm_url}" style="display:inline-block; padding:12px 25px; background:#3498db; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">Conferma la Registrazione</a>
-    </p>
-    <p>Se non hai richiesto questa registrazione, puoi ignorare questa email.</p>
-    <footer style="margin-top:40px; font-size:12px; color:#999; text-align:center;">
-      FantaMatrimonio - Tutti i diritti riservati &copy; 2025
-    </footer>
-  </div>
-</body>
-</html>
-"""
-
-
 
 confirmation_html_template = """
 <!DOCTYPE html>
@@ -532,7 +510,23 @@ def register():
         flash("Errore durante la registrazione: " + str(e), "danger")
         return render_template("register.html")
 
-
+@app.route("/league/<league_id>/delete", methods=["POST"])
+def delete_league(league_id):
+    if 'user_id' not in session:
+        flash("Effettua prima il login", "warning")
+        return redirect(url_for("login"))
+    
+    league = League.query.get_or_404(league_id)
+    
+    if league.owner_id != session['user_id']:
+        flash("Solo il proprietario può eliminare la lega", "danger")
+        return redirect(url_for("dashboard"))
+    
+    db.session.delete(league)
+    db.session.commit()
+    
+    flash(f"Lega '{league.name}' eliminata con successo", "success")
+    return redirect(url_for("dashboard"))
 
 @app.route('/update_username', methods=['POST'])
 def update_username():

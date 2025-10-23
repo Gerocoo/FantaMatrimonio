@@ -10,15 +10,20 @@
   <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
   <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
   <div class="actions" style="text-align:center; margin:2rem 0;">
-    {% if is_member %}
-      <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
-    {% endif %}
-    {% if is_owner %}
-      <button onclick="toggleForm('addMemberForm')" class="btn btn-secondary">Aggiungi Membro</button>
-      <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
-    {% endif %}
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
-  </div>
+  {% if is_member %}
+    <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
+  {% endif %}
+  {% if is_owner %}
+    <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
+    <button onclick="confirmDelete()" class="btn btn-danger">Elimina Lega</button>
+  {% endif %}
+  <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
+</div>
+{% if is_owner %}
+<form id="deleteLeagueForm" method="post" action="{{ url_for('delete_league', league_id=league.id) }}" style="display:none;">
+  <input type="hidden" name="confirm" value="1">
+</form>
+{% endif %}
 </section>
 
 {% if is_owner %}
@@ -192,6 +197,11 @@ fetch(`/league/${leagueId}/chat`)
       lastSeenMessageId = messages[messages.length - 1].id;
     }
   });
+  function confirmDelete() {
+  if(confirm("Sei sicuro di voler eliminare questa lega? L'azione è irreversibile!")) {
+    document.getElementById("deleteLeagueForm").submit();
+  }
+}
 </script>
 
 <main>

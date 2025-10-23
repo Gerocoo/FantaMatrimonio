@@ -87,12 +87,12 @@ leghe-home h2 {
    NAVBAR
    ============================================ */
 .navbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;  
-    padding: 10px 20px;
-    background: #fff;                
-    box-shadow: 0 1px 6px rgba(0,0,0,0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(225,67,163,0.1);
 }
 .navbar-avatar {
   width: 45px;
@@ -247,9 +247,7 @@ leghe-home h2 {
   transition: background 0.2s;
 }
 
-#profileDropdown:hover {
-  background: var(--muted);
-}
+
 
 .dropdown-content {
   display: none;
@@ -858,12 +856,12 @@ tbody td {
         padding: 8px 16px;
     }
     .navbar {
-        flex-direction: column;
+       
         align-items: stretch;
     }
     .navbar-buttons {
-        justify-content: flex-end;
-        margin-top: 10px;
+        justify-content: center;
+        
     }
 }
 .navbar {
@@ -932,10 +930,10 @@ tbody td {
 /* OVERRIDE: responsive NAVBAR */
 @media (max-width: 540px) {
   .navbar {
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: stretch;
     text-align: center;
-    gap: 0.5rem;
+  
     padding: 18px 7vw;
     min-height: unset;
   }
@@ -946,7 +944,7 @@ tbody td {
     margin-right: 0;
   }
   .navbar-buttons {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     width: 100%;
     gap: 8px;
@@ -958,6 +956,61 @@ tbody td {
     font-size: 1.15em;
     margin: 0;
   }
+  table.table-ranking {
+  width: 100%;
+  max-width: 600px; /* limita la larghezza massima */
+  margin: 2rem auto; /* centra la tabella */
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Header della tabella */
+table.table-ranking thead {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+table.table-ranking thead th {
+  padding: 1rem;
+  text-align: center; /* centra il testo negli header */
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+}
+
+/* Righe del body */
+table.table-ranking tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+
+table.table-ranking tbody tr:hover {
+  background: var(--secondary);
+}
+
+/* Celle del body */
+table.table-ranking tbody td {
+  padding: 1rem;
+  text-align: center; /* centra il testo nelle celle */
+  color: var(--card-foreground);
+  font-family: "Poppins", sans-serif;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  table.table-ranking {
+    max-width: 95%;
+  }
+  
+  table.table-ranking th,
+  table.table-ranking td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+  }
+}
 }
 
 @media (max-width: 350px) {

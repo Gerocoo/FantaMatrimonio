@@ -5,11 +5,12 @@
   <main>
   <h1>Benvenuti a FantaMatrimonio</h1>
   <p>
-    Il gioco di scommesse più divertente e goliardico che mette alla prova la vostra conoscenza degli amici (e di voi stessi)! 
+    Il gioco di scommesse più divertente e goliardico che mette alla prova la conoscenza dei vostri amici (e di voi stessi)! 
     Pronti a sfidare i vostri amici e a prevedere chi sarà il prossimo a convolare a nozze?
   </p>
    <p style="margin-top: 1rem; font-size: 1.1rem;">
     Non sai come si gioca? 
+    <br>
     <a href="{{ url_for('rules') }}" style="color: white; text-decoration: underline; font-weight: 600;">
       Leggi le regole!
     </a>
@@ -34,7 +35,7 @@
       <input 
         type="text" 
         name="search" 
-        placeholder="Cerca per nome lega o proprietario..." 
+        placeholder="Nome lega o admin.." 
         value="{{ search_query or '' }}"
         class="search-input"
       >

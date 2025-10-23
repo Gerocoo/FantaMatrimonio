@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}FantaMatrimonio{% endblock %}</title>
-  <meta name="description" content="FantaMatrimonio - Il gioco di scommesse più divertente e goliardico che mette alla prova la vostra conoscenza degli amici (e di voi stessi!)">
+  <meta name="description" content="FantaMatrimonio - Il gioco di scommesse più divertente e goliardico che mette alla prova la conoscenza dei vostri amici (e di voi stessi!)">
   <link rel="icon" href="{{ url_for('static', filename='default.png') }}" />
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}">
@@ -58,9 +58,11 @@
       </div>
     </div>
   {% else %}
-    <div style="gap:1rem;">
-      <a href="{{ url_for('login') }}" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; margin: 0;">Login</a>
-      <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.5rem 1.5rem; margin: 0;">Registrati</a>
+    <div class="navbar-buttons">
+      <br>
+      <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
+      
+      <a href="{{ url_for('register') }}" class="btn btn-primary">Registrati</a>
     </div>
   {% endif %}
 </nav>
