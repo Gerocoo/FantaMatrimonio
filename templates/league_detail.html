@@ -4,26 +4,28 @@
 <script>
     const currentUser = "{{ session.get('username')|tojson }}";
 </script>
+
 <section class="league-info card">
   <h2>{{ league.name }}</h2>
   <p>{{ league.description or 'Nessuna descrizione' }}</p>
   <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
   <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
   <div class="actions" style="text-align:center; margin:2rem 0;">
-  {% if is_member %}
-    <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
-  {% endif %}
+    {% if is_member %}
+      <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
+    {% endif %}
+    {% if is_owner %}
+      <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
+      <button onclick="confirmDelete()" class="btn btn-danger">Elimina Lega</button>
+    {% endif %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
+  </div>
+  
   {% if is_owner %}
-    <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
-    <button onclick="confirmDelete()" class="btn btn-danger">Elimina Lega</button>
+  <form id="deleteLeagueForm" method="post" action="{{ url_for('delete_league', league_id=league.id) }}" style="display:none;">
+    <input type="hidden" name="confirm" value="1">
+  </form>
   {% endif %}
-  <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
-</div>
-{% if is_owner %}
-<form id="deleteLeagueForm" method="post" action="{{ url_for('delete_league', league_id=league.id) }}" style="display:none;">
-  <input type="hidden" name="confirm" value="1">
-</form>
-{% endif %}
 </section>
 
 {% if is_owner %}
@@ -36,6 +38,7 @@
     <button type="button" class="btn btn-link" onclick="toggleForm('addMemberForm')">Annulla</button>
   </form>
 </section>
+
 <section id="addFactorForm" class="popup-form" style="display:none;">
   <form method="post" class="login" action="{{ url_for('add_factor', league_id=league.id) }}">
     <h3>Aggiungi Fattore</h3>
@@ -109,7 +112,6 @@ function loadMessages() {
   fetch(`/league/${leagueId}/chat`)
     .then(res => res.json())
     .then(messages => {
-      console.log("MESSAGGI ricevuti:", messages);
       chatMessages.innerHTML = '';
       messages.forEach(m => {
         chatMessages.innerHTML += `
@@ -131,21 +133,15 @@ function checkNewMessages() {
   fetch(`/league/${leagueId}/chat`)
     .then(res => res.json())
     .then(messages => {
-      // Se non ci sono messaggi o non abbiamo ancora visto messaggi, non fare nulla
       if(messages.length === 0) return;
-      
-      // Inizializza lastSeenMessageId al primo caricamento
       if(lastSeenMessageId === null) {
         lastSeenMessageId = messages[messages.length - 1].id;
         return;
       }
-      
-      // Controlla se ci sono nuovi messaggi
       const newMessages = messages.filter(m => m.id > lastSeenMessageId);
       if(newMessages.length > 0) {
         unreadCount += newMessages.length;
         updateBadge();
-        // Aggiorna lastSeenMessageId all'ultimo messaggio ricevuto
         lastSeenMessageId = messages[messages.length - 1].id;
       }
     });
@@ -178,18 +174,14 @@ chatForm.addEventListener("submit", e => {
   });
 });
 
-// Polling per nuovi messaggi ogni 4 secondi
 setInterval(() => {
   if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
-    // Chat chiusa: controlla nuovi messaggi
     checkNewMessages();
   } else {
-    // Chat aperta: ricarica messaggi
     loadMessages();
   }
 }, 4000);
 
-// Carica messaggi iniziali senza incrementare il badge
 fetch(`/league/${leagueId}/chat`)
   .then(res => res.json())
   .then(messages => {
@@ -197,7 +189,8 @@ fetch(`/league/${leagueId}/chat`)
       lastSeenMessageId = messages[messages.length - 1].id;
     }
   });
-  function confirmDelete() {
+
+function confirmDelete() {
   if(confirm("Sei sicuro di voler eliminare questa lega? L'azione è irreversibile!")) {
     document.getElementById("deleteLeagueForm").submit();
   }
@@ -205,42 +198,36 @@ fetch(`/league/${leagueId}/chat`)
 </script>
 
 <main>
-  <h2>Classifica Membri</h2>
+  <!-- CLASSIFICA MEMBRI - Card Style -->
+  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">Classifica Membri</h2>
   {% if members %}
-  <table class="table-ranking">
-    <thead>
-      <tr><th>Posizione</th><th>Nome</th><th>Punteggio</th></tr>
-    </thead>
-    <tbody>
+    <div class="ranking-cards-container">
       {% for member in members %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ member.name }}</td>
-        <td><strong>{{ "%.2f"|format(member.total_score) }}</strong></td>
-      </tr>
+      <div class="ranking-card">
+        <div class="ranking-position">{{ loop.index }}</div>
+        <div class="ranking-info">
+          <h3>{{ member.name }}</h3>
+          <p class="ranking-score">{{ "%.2f"|format(member.total_score) }}</p>
+        </div>
+      </div>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
   {% else %}
     <p class="no-data">Nessun membro ancora</p>
   {% endif %}
 
-  <h2 style="margin-top: 3rem;">Fattori di Valutazione</h2>
+  <!-- FATTORI DI VALUTAZIONE - Card Style -->
+  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
   {% if factors %}
-  <table class="table-ranking">
-    <thead>
-      <tr><th>Fattore</th><th>Descrizione</th><th>Peso</th></tr>
-    </thead>
-    <tbody>
+    <div class="factors-cards-container">
       {% for factor in factors %}
-      <tr>
-        <td>{{ factor.name }}</td>
-        <td>{{ factor.description or '-' }}</td>
-        <td>{{ factor.weight }}</td>
-      </tr>
+      <div class="factor-card">
+        <h3>{{ factor.name }}</h3>
+        <p class="factor-description">{{ factor.description or 'Nessuna descrizione' }}</p>
+        <p class="factor-weight"><strong>Peso:</strong> {{ factor.weight }}</p>
+      </div>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
   {% else %}
     <p class="no-data">Nessun fattore definito</p>
   {% endif %}

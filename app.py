@@ -15,6 +15,8 @@ from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 from mailtrap import MailtrapClient, Mail, Address
 import logging
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 
 try:
@@ -609,7 +611,80 @@ def google_login():
         return redirect(url_for("dashboard"))
     except Exception as e:
         return f"Errore interno Google login: {str(e)}", 500
-    
+@app.route("/google_login_token", methods=["POST"])
+def google_login_token():
+    """Gestisce il login tramite popup Google Sign-In"""
+    try:
+        token = request.json.get("token")
+        
+        # Verifica il token con Google
+        idinfo = id_token.verify_oauth2_token(
+            token, 
+            google_requests.Request(), 
+            "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com"
+        )
+        
+        # Verifica che sia per la tua app
+        if idinfo['aud'] != "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com":
+            raise ValueError('Token non valido')
+        
+        email = idinfo.get('email')
+        if not email:
+            return jsonify({
+                "success": False, 
+                "message": "Email non fornita da Google"
+            }), 400
+        
+        avatar_url = idinfo.get('picture', 'default.png')
+        username = email.split("@")[0]
+        
+        # Cerca o crea l'utente
+        user = User.query.filter_by(email=email).first()
+        if user:
+            if user.provider != "google":
+                return jsonify({
+                    "success": False, 
+                    "message": "Questa email è già registrata con un account locale"
+                }), 400
+            # Aggiorna l'avatar se è cambiato
+            if user.avatar != avatar_url:
+                user.avatar = avatar_url
+                db.session.commit()
+        else:
+            # Crea nuovo utente
+            user = User(
+                username=username,
+                email=email,
+                avatar=avatar_url,
+                provider="google"
+            )
+            db.session.add(user)
+            db.session.commit()
+        
+        # Imposta la sessione
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['avatar'] = user.avatar
+        
+        return jsonify({
+            "success": True,
+            "message": "Login effettuato con successo"
+        })
+        
+    except ValueError as e:
+        print(f"Errore validazione token: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Token non valido: {str(e)}"
+        }), 401
+    except Exception as e:
+        print(f"Errore login Google: {e}")
+        return jsonify({
+            "success": False,
+            "message": "Errore durante il login"
+        }), 500
+
+   
 @app.route("/league/<league_id>/chat", methods=["GET", "POST"])
 def league_chat(league_id):
     if 'user_id' not in session:

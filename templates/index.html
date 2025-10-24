@@ -19,8 +19,13 @@
 </main>
   {% if not session.get('user_id') %}
     <a href="{{ url_for('login') }}" class="btn btn-primary">Inizia a Giocare</a>
-    <a href="{{ url_for('google.login') }}" class="btn btn-google">
-      <img src="{{ url_for('static', filename='google-icon.png') }}" alt="Google">
+    
+    <a href="/login/google" class="btn btn-google" style="
+    padding-right: 22px;
+    padding-left: 22px;
+    margin-top: 10px;
+">
+      <img src="/static/google-icon.png" alt="Google">
       Login con Google
     </a>
   {% else %}
@@ -39,10 +44,8 @@
         value="{{ search_query or '' }}"
         class="search-input"
       >
-      <button type="submit" class="btn btn-primary search-btn">🔍 Cerca</button>
-      {% if search_query %}
-        <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancella</a>
-      {% endif %}
+      <button type="submit" class="search-icon-btn"">🔍</button>
+      
     </form>
   </div>
   <h2>Leghe Disponibili</h2>
@@ -109,7 +112,7 @@ document.querySelectorAll('.btn-join').forEach(btn => {
           style="width: 100%; padding: 0.75rem; border: 2px solid var(--input); border-radius: var(--radius); margin-bottom: 1rem;">
       </div>
       
-      <div style="display: flex; gap: 1rem;">
+      <div style="display: flex;gap: 1rem;flex-direction: column;">
         <button type="button" onclick="closeJoinPopup()" class="btn btn-secondary" style="flex: 1; margin: 0;">
           Annulla
         </button>
@@ -117,6 +120,7 @@ document.querySelectorAll('.btn-join').forEach(btn => {
           Conferma
         </button>
       </div>
+        
     </form>
   </div>
 </div>

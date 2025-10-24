@@ -308,42 +308,53 @@ leghe-home h2 {
   z-index: 1;
 }
 .search-container {
-  max-width: 700px;
-  margin: 2rem auto;
-  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .search-form {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: center;
-  justify-content: center;
   flex-wrap: wrap;
 }
 
 .search-input {
+  width: 100%;
+  padding: 0.75rem 3rem 0.75rem 1rem;
+  border: 2px solid var(--input, #ddd);
+  border-radius: 25px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.search-input-wrapper {
+  position: relative;
   flex: 1;
   min-width: 250px;
-  padding: 0.85rem 1.25rem;
-  border: 2px solid var(--input);
-  border-radius: 2rem;
-  font-size: 1rem;
-  font-family: "Poppins", sans-serif;
-  background: var(--card);
-  color: var(--card-foreground);
-  transition: all 0.3s;
+  max-width: 500px;
 }
-
 .search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(225, 67, 163, 0.1);
+  border-color: var(--primary, #ff5ace);
 }
 
-.search-btn {
-  padding: 0.65rem 1.2rem;
-  font-size: 0.95rem;
- 
+.search-icon-btn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.3s;
+}
+.search-icon-btn:hover {
+  background-color: rgba(255, 90, 206, 0.1);
 }
 
 
@@ -463,11 +474,11 @@ main p {
 .login {
   max-width: 450px;
   margin: 4rem auto;
-  padding: 3rem;
   background: var(--card);
   border-radius: calc(var(--radius) * 2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--border);
+  padding: 2rem;
 }
 
 form h2 {
@@ -735,10 +746,693 @@ table {
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+@media (min-width: 769px) {
+  table {
+    width: 100%;
+    max-width: 1000px;
+    margin: 2rem auto;
+    border-collapse: collapse;
+    background: var(--card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  thead {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  
+  thead th {
+    padding: 1rem;
+    text-align: center;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+  }
+  
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  
+  tbody tr:hover {
+    background: var(--muted);
+  }
+  
+  tbody td {
+    padding: 1rem;
+    text-align: center;
+    color: var(--card-foreground);
+    font-family: "Poppins", sans-serif;
+  }
+}
+
+/* Mobile: card verticali */
+@media (max-width: 768px) {
+  /* Nascondi la tabella classica */
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+  
+  /* Nascondi l'header */
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  /* Ogni riga diventa una card */
+  tbody tr {
+    margin-bottom: 1.5rem;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: calc(var(--radius) * 1.5);
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  tbody tr:hover {
+    background: var(--muted);
+    border-color: var(--primary);
+  }
+  
+  /* Ogni cella diventa una riga */
+  tbody td {
+    border: none;
+    position: relative;
+    padding: 1rem 0.5rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* Aggiungi etichette prima di ogni dato */
+  tbody td:nth-of-type(1)::before {
+    content: "Membro";
+    font-weight: bold;
+    color: var(--primary);
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  
+  tbody td:nth-of-type(2)::before {
+    content: "Punteggio (1-10)";
+    font-weight: bold;
+    color: var(--primary);
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  
+  tbody td:nth-of-type(3)::before {
+    content: "Booster / Sconto";
+    font-weight: bold;
+    color: var(--primary);
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Stile per il gruppo di rating su mobile */
+  tbody td .rating-group {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-start;
+  }
+  
+  tbody td .rating-group label {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+  
+  /* Stile per il select booster su mobile */
+  tbody td .booster-select {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 2px solid var(--input);
+    background: var(--card);
+    color: var(--card-foreground);
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  tbody tr {
+    padding: 1rem;
+  }
+  
+  tbody td {
+    padding: 0.75rem 0.25rem;
+  }
+  
+  tbody td .rating-group label {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+}
+/* ============================================
+   RATING GROUP - Layout 5x2 Centrato
+   ============================================ */
+.rating-group {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 colonne */
+  gap: 0.5rem;
+  justify-items: center;
+  margin: 0.5rem auto;
+  max-width: 300px;
+}
+
+.rating-group input[type="radio"] {
+  display: none;
+}
+
+.rating-group label {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+/* Effetto hover */
+.rating-group label:hover {
+  background: var(--secondary);
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(225, 67, 163, 0.3);
+}
+
+/* Stato selezionato */
+.rating-group input[type="radio"]:checked + label {
+  background: var(--primary);
+  color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 6px 16px rgba(225, 67, 163, 0.5);
+  border: 3px solid var(--primary);
+}
+
+/* ============================================
+   RESPONSIVE - Mobile
+   ============================================ */
+@media (max-width: 768px) {
+  .rating-group {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.4rem;
+    max-width: 280px;
+  }
+  
+  .rating-group label {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rating-group {
+    gap: 0.3rem;
+    max-width: 260px;
+  }
+  
+  .rating-group label {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+}
 
 thead {
   background: var(--primary);
   color: var(--primary-foreground);
+}
+/* ============================================
+   RATING GROUP - Layout Responsive Compatto
+   ============================================ */
+.rating-group {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+  justify-items: center;
+  margin: 0.5rem auto;
+  max-width: 100%;
+  padding: 0;
+}
+
+.rating-group input[type="radio"] {
+  display: none;
+}
+
+.rating-group label {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.rating-group label:hover {
+  background: var(--secondary);
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(225, 67, 163, 0.3);
+}
+
+.rating-group input[type="radio"]:checked + label {
+  background: var(--primary);
+  color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 6px 16px rgba(225, 67, 163, 0.5);
+  border: 3px solid var(--primary);
+}
+
+/* ============================================
+   MEMBERS SLIDER - Scroll Orizzontale
+   ============================================ */
+.members-slider-container {
+  position: relative;
+  max-width: 100%;
+  margin: 2rem auto;
+  padding: 0 3rem;
+}
+
+.members-slider {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-behavior: smooth;
+  padding: 1rem 0.5rem 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+  scroll-snap-type: x mandatory; /* Snap alle card */
+  
+}
+
+
+.members-slider::-webkit-scrollbar-track {
+  background: rgba(225, 67, 163, 0.1);
+  border-radius: 4px;
+}
+
+.members-slider::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+.members-slider::-webkit-scrollbar-thumb:hover {
+  background: var(--ring);
+}
+
+.member-card {
+  min-width: 90%; /* Occupa quasi tutto lo spazio disponibile */
+  max-width: 320px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  scroll-snap-align: center;
+  margin: 0 auto;
+}
+
+
+.member-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(225, 67, 163, 0.15);
+  border-color: var(--primary);
+}
+
+.scroll-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+}
+
+.scroll-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.scroll-dot.active {
+  background: var(--primary);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.scroll-dot:hover {
+  background: var(--primary);
+  opacity: 0.7;
+}
+
+/* ============================================
+   HINT TEXT - Suggerimento scroll
+   ============================================ */
+.scroll-hint {
+  text-align: center;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-top: 0.5rem;
+  opacity: 0.7;
+}
+
+.member-name {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.6rem;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.member-label {
+  display: block;
+  font-weight: 600;
+  color: var(--primary);
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  margin: 1rem 0 0.5rem 0;
+  text-align: center;
+}
+
+.member-card .booster-select {
+  width: 100%;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  border: 2px solid var(--input);
+  background: var(--card);
+  color: var(--card-foreground);
+  margin-top: 0.5rem;
+}
+.scroll-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+}
+
+.scroll-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+}
+
+.scroll-dot.active {
+  background: var(--primary);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.slider-btn:hover {
+  background: var(--ring);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-btn-left {
+  left: 0;
+}
+
+.slider-btn-right {
+  right: 0;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .factor-container {
+    padding: 1.5rem 0.3rem;
+    max-width: 98%;
+  }
+  
+  .members-slider-container {
+    padding: 0 2.5rem;
+  }
+  
+  .member-card {
+    min-width: 92%;
+    max-width: 280px;
+    padding: 1.2rem;
+  }
+  
+  .member-name {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .member-label {
+    font-size: 0.75rem;
+  }
+  
+  .rating-group {
+    gap: 0.35rem;
+  }
+  
+  .rating-group label {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+  
+  .member-card .booster-select {
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
+  .scroll-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .scroll-dot.active {
+    width: 20px;
+  }
+
+  .slider-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .factor-container {
+    padding: 1.2rem 0.2rem;
+    max-width: 98%;
+  }
+   .member-card {
+    min-width: 94%;
+    max-width: 260px;
+    padding: 1rem;
+  }
+  .members-slider-container {
+    padding: 0 2rem;
+  }
+  .scroll-dot {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scroll-dot.active {
+    width: 18px;
+  }
+
+  .member-card {
+    min-width: 230px;
+    max-width: 230px;
+    padding: 1rem;
+  }
+  
+  .member-name {
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .member-label {
+    font-size: 0.7rem;
+    margin: 0.8rem 0 0.4rem 0;
+  }
+  
+  .rating-group {
+    gap: 0.3rem;
+  }
+  
+  .rating-group label {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+    border-width: 1.5px;
+  }
+  
+  .member-card .booster-select {
+    font-size: 0.8rem;
+    padding: 0.45rem;
+  }
+  
+  .slider-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .members-slider-container {
+    padding: 0 1.8rem;
+  }
+  
+  .member-card {
+    min-width: 210px;
+    max-width: 210px;
+    padding: 0.9rem;
+  }
+  
+  .member-name {
+    font-size: 1.2rem;
+  }
+  
+  .member-label {
+    font-size: 0.65rem;
+  }
+  
+  .rating-group {
+    gap: 0.25rem;
+  }
+  
+  .rating-group label {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+    border-width: 1.5px;
+  }
+  
+  .member-card .booster-select {
+    font-size: 0.75rem;
+    padding: 0.4rem;
+  }
+  
+  .slider-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+  }
+}
+/* ============================================
+   FACTOR CONTAINER - VERSIONE CORRETTA
+   ============================================ */
+.factor-container {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+  padding: 2rem 0.5rem; /* Padding laterale minimo */
+  margin: 2rem auto;
+  max-width: 95%; /* Non limitare troppo la larghezza */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.factor-container:hover {
+  box-shadow: 0 12px 32px rgba(225, 67, 163, 0.15);
+  border-color: var(--primary);
+}
+
+/* ============================================
+   MEMBERS SLIDER CONTAINER - PIÙ LARGO
+   ============================================ */
+.members-slider-container {
+  position: relative;
+  width: 100%;
+  margin: 1.5rem 0;
+  padding: 0;
+}
+.members-slider {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-behavior: smooth;
+  padding: 1rem 0.5rem 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) rgba(225, 67, 163, 0.1);
+  scroll-snap-type: x mandatory;
+}
+/* Responsive */
+@media (max-width: 768px) {
+  .factor-container {
+    padding: 1.5rem 0.5rem;
+    margin: 1.5rem auto;
+  }
+  
+  .members-slider-container {
+    margin: 1.5rem -0.5rem;
+    padding: 0 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .factor-container {
+    padding: 1.2rem 0.3rem;
+    margin: 1.2rem auto;
+  }
+  
+  .members-slider-container {
+    margin: 1rem -0.3rem;
+    padding: 0 2.5rem;
+  }
 }
 
 thead th {
@@ -950,11 +1644,11 @@ tbody td {
     gap: 8px;
   }
   .btn, .btn-primary, .btn-secondary {
-    
+    margin-top: 10PX;
     max-width: 95vw;
     justify-content: center;
     font-size: 1.15em;
-    margin: 0;
+    margin-top: 10px;
   }
   table.table-ranking {
   width: 100%;
@@ -978,6 +1672,168 @@ table.table-ranking thead th {
   text-align: center; /* centra il testo negli header */
   font-family: "Montserrat", sans-serif;
   font-weight: 600;
+}
+/* ============================================
+   RANKING CARDS - Classifica Membri
+   ============================================ */
+.ranking-cards-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.ranking-card {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: calc(var(--radius) * 1.5);
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.ranking-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(225, 67, 163, 0.15);
+  border-color: var(--primary);
+}
+
+.ranking-position {
+  width: 50px;
+  height: 50px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  flex-shrink: 0;
+  margin-right: 1.5rem;
+}
+
+.ranking-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ranking-info h3 {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.8rem;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.ranking-score {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+  font-family: "Montserrat", sans-serif;
+  margin: 0;
+}
+
+/* ============================================
+   FACTORS CARDS - Fattori di Valutazione
+   ============================================ */
+.factors-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.factor-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: calc(var(--radius) * 1.5);
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.factor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(225, 67, 163, 0.15);
+  border-color: var(--primary);
+}
+
+.factor-card h3 {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.6rem;
+  color: var(--primary);
+  margin: 0 0 0.8rem 0;
+  text-align: center;
+}
+
+.factor-description {
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.factor-weight {
+  text-align: center;
+  color: var(--foreground);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.factor-weight strong {
+  color: var(--primary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .ranking-card {
+    padding: 1rem;
+  }
+  
+  .ranking-position {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+    margin-right: 1rem;
+  }
+  
+  .ranking-info h3 {
+    font-size: 1.5rem;
+  }
+  
+  .ranking-score {
+    font-size: 1.3rem;
+  }
+  
+  .factors-cards-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .ranking-position {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .ranking-info h3 {
+    font-size: 1.3rem;
+  }
+  
+  .ranking-score {
+    font-size: 1.2rem;
+  }
 }
 
 /* Righe del body */
@@ -1451,7 +2307,7 @@ table.table-ranking tbody td {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  
   backdrop-filter: blur(4px);
   z-index: -1;
 }

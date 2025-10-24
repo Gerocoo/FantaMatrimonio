@@ -121,7 +121,7 @@
       }
     });
 function handleCredentialResponse(response) {
-    console.log("ID token:", response.credential);
+    console.log("Token ricevuto dal popup Google");
     fetch('/google_login_token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,29 +129,53 @@ function handleCredentialResponse(response) {
     })
     .then(res => res.json())
     .then(data => {
-        console.log(data);
+        console.log("Risposta server:", data);
         if(data.success){
-            window.location.href = "/dashboard"; // redirect dopo login
+            window.location.href = "/dashboard";
         } else {
-            alert("Login fallito");
+            alert("Login fallito: " + (data.message || "Errore sconosciuto"));
         }
+    })
+    .catch(error => {
+        console.error("Errore di rete:", error);
+        alert("Errore durante il login con Google");
     });
 }
 
 window.onload = function () {
-    google.accounts.id.initialize({
-        client_id: "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",  // inserisci qui il tuo Client ID Google
-        callback: handleCredentialResponse
-    });
+    // Controlla che la libreria Google sia caricata
+    if (typeof google === 'undefined') {
+        console.error("Libreria Google non caricata!");
+        return;
+    }
+    
+    try {
+        google.accounts.id.initialize({
+            client_id: "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
+            callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+        });
 
-    
-    google.accounts.id.renderButton(
-        document.getElementById("googleSignInDiv"), 
-        { theme: "outline", size: "large" }  // personalizzazione pulsante
-    );
-    
-    // Facoltativo: prompt automatico per scegliere account
-    google.accounts.id.prompt();
+        // Renderizza il bottone solo se l'elemento esiste nella pagina
+        const btnDiv = document.getElementById("googleSignInDiv");
+        if (btnDiv) {
+            google.accounts.id.renderButton(
+                btnDiv,
+                { 
+                    theme: "outline", 
+                    size: "large",
+                    text: "signin_with",
+                    shape: "rectangular",
+                    logo_alignment: "left"
+                }
+            );
+        }
+      
+        
+    } catch (e) {
+        console.error("Errore inizializzazione Google Sign-In:", e);
+    }
 }
   </script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
