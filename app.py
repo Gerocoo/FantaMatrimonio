@@ -68,6 +68,40 @@ class User(db.Model):
     reset_token = db.Column(db.String(100), unique=True)
     reset_token_expiry = db.Column(db.DateTime)
 
+class ChatMessage(db.Model):
+    """Modello per i messaggi della chat"""
+    __tablename__ = 'chat_message'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships - NOTA: backref rinominati per evitare conflitti
+    user = db.relationship('User', backref=db.backref('messages_sent', lazy='dynamic'))
+    league = db.relationship('League', backref=db.backref('messages', lazy='dynamic'))
+    attachments = db.relationship('ChatAttachment', backref='message', cascade='all, delete-orphan', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<ChatMessage {self.id} by {self.user.username}>'
+
+
+class ChatAttachment(db.Model):
+    """Modello per gli allegati dei messaggi"""
+    __tablename__ = 'chat_attachment'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('chat_message.id'), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    original_name = db.Column(db.String(200), nullable=False)
+    file_type = db.Column(db.String(50), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ChatAttachment {self.id} - {self.original_name}>'
+
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -88,15 +122,15 @@ class League(db.Model):
             return False
         return check_password_hash(self.password_hash, password)
     
-class LeagueChatMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+# class LeagueChatMessage(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
+#     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+#     message = db.Column(db.Text, nullable=False)
+#     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', backref='messages')
-    league = db.relationship('League', backref='chat_messages')
+#     user = db.relationship('User', backref='messages')
+#     league = db.relationship('League', backref='chat_messages')
 
 class LeagueMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -447,24 +481,104 @@ def login():
 
 confirmation_html_template = """
 <!DOCTYPE html>
-<html lang="it">
-<head><meta charset="UTF-8" /><title>Conferma Registrazione</title></head>
-<body style="font-family:Arial,sans-serif; background:#f4f4f5; margin:0; padding:20px;">
-  <div style="max-width:600px; margin:40px auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-    <h1 style="color:#2c3e50;">Benvenuto su FantaMatrimonio!</h1>
-    <p>Ciao {username},</p>
-    <p>Per attivare il tuo account clicca sul pulsante qui sotto:</p>
-    <p style="text-align:center;">
-      <a href="{confirm_url}" style="display:inline-block; padding:12px 25px; background:#3498db; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">Conferma la Registrazione</a>
-    </p>
-    <p>Se non hai richiesto questa registrazione, puoi ignorare questa email.</p>
-    <footer style="margin-top:40px; font-size:12px; color:#999; text-align:center;">
-      FantaMatrimonio - Tutti i diritti riservati &copy; 2025
-    </footer>
-  </div>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {{
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #ff5ace 0%, #ffa3d7 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0;
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+        }}
+        .content {{
+            padding: 40px 30px;
+        }}
+        .content h2 {{
+            color: #ff5ace;
+            margin-top: 0;
+        }}
+        .content p {{
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }}
+        .button {{
+            display: inline-block;
+            background: #ff5ace;
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+        }}
+        .button:hover {{
+            background: #e143a3;
+        }}
+        .footer {{
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }}
+        .warning {{
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>FantaMatrimonio</h1>
+        </div>
+        <div class="content">
+            <h2>Ciao {username}!</h2>
+   <p>Clicca sul pulsante qui sotto per attivare il tuo account. Il link è valido per <strong>1 ora</strong>:</p>
+            <div style="text-align: center;">
+                <a href="{confirm_url}" class="button">Conferma</a>
+            </div>
+            <div class="warning">
+                <p style="margin: 0;"><strong>⚠️ Importante:</strong> Se non hai richiesto questa registrazione, puoi ignorare questa email. </p>
+            </div>
+            <p>Se il pulsante non funziona, copia e incolla questo link nel browser:</p>
+            <p style="word-break: break-all; font-size: 14px; color: #666;">{confirm_url}</p>
+        </div>
+        <div class="footer">
+            <p><strong>Il Team di FantaMatrimonio</strong></p>
+            <p><em>Il gioco di scommesse più divertente e goliardico!</em></p>
+        </div>
+    </div>
 </body>
 </html>
 """
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -511,6 +625,163 @@ def register():
         print("ERRORE REGISTRAZIONE:", e)
         flash("Errore durante la registrazione: " + str(e), "danger")
         return render_template("register.html")
+    
+
+
+@app.route('/league/<league_code>/chat', methods=['GET'])
+def get_chat_messages(league_code):
+    """Recupera tutti i messaggi della chat di una lega"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non autenticato'}), 401
+    
+    league = League.query.filter_by(code=league_code).first_or_404()
+    messages = ChatMessage.query.filter_by(league_id=league.id)\
+                                 .order_by(ChatMessage.created_at.asc())\
+                                 .all()
+    
+    result = []
+    for msg in messages:
+        attachments_list = []
+        for att in msg.attachments:
+            attachments_list.append({
+                'id': att.id,
+                'name': att.original_name,
+                'url': url_for('uploaded_file', filename=att.filename),
+                'type': att.file_type,
+                'size': att.file_size
+            })
+        
+        result.append({
+            'id': msg.id,
+            'user': msg.user.username,
+            'message': msg.message or '',
+            'created_at': msg.created_at.isoformat(),
+            'attachments': attachments_list
+        })
+    
+    return jsonify(result)
+
+
+@app.route('/league/<league_code>/chat', methods=['POST'])
+def send_chat_message(league_code):
+    """Invia un nuovo messaggio con eventuali allegati"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non autenticato'}), 401
+    
+    league = League.query.filter_by(code=league_code).first_or_404()
+    message_text = request.form.get('message', '').strip()
+    
+    # Validazione: almeno un messaggio o un file
+    if not message_text and not request.files:
+        return jsonify({'error': 'Messaggio o file richiesto'}), 400
+    
+    # Crea il messaggio
+    new_message = ChatMessage(
+        league_id=league.id,
+        user_id=session['user_id'],
+        message=message_text if message_text else None
+    )
+    db.session.add(new_message)
+    db.session.flush()  # Ottieni l'ID prima del commit
+    
+    # Gestisci file allegati
+    attachments_data = []
+    for key in request.files:
+        file = request.files[key]
+        
+        if file and file.filename:
+            # Verifica estensione
+            if not allowed_file(file.filename):
+                db.session.rollback()
+                return jsonify({'error': f'Tipo file non permesso: {file.filename}'}), 400
+            
+            # Genera nome file sicuro e unico
+            original_filename = secure_filename(file.filename)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            unique_filename = f"{timestamp}_{session['user_id']}.{ext}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            
+            try:
+                # Salva file
+                file.save(filepath)
+                file_size = os.path.getsize(filepath)
+                
+                # Crea record attachment nel database
+                attachment = ChatAttachment(
+                    message_id=new_message.id,
+                    filename=unique_filename,
+                    original_name=original_filename,
+                    file_type=get_file_type(original_filename),
+                    file_size=file_size
+                )
+                db.session.add(attachment)
+                
+                attachments_data.append({
+                    'name': original_filename,
+                    'url': url_for('uploaded_file', filename=unique_filename),
+                    'type': get_file_type(original_filename),
+                    'size': file_size
+                })
+            
+            except Exception as e:
+                db.session.rollback()
+                # Rimuovi file se salvato
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return jsonify({'error': f'Errore nel salvataggio: {str(e)}'}), 500
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'status': 'ok',
+            'message_id': new_message.id,
+            'user': session.get('username'),
+            'message': message_text,
+            'created_at': new_message.created_at.isoformat(),
+            'attachments': attachments_data
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        # Rimuovi file caricati in caso di errore
+        for att in attachments_data:
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], att['name'])
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        return jsonify({'error': f'Errore nel database: {str(e)}'}), 500
+
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve i file caricati dagli utenti"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route('/league/<league_code>/chat/delete/<int:message_id>', methods=['DELETE'])
+def delete_chat_message(league_code, message_id):
+    """Elimina un messaggio (solo chi l'ha inviato o l'owner della lega)"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non autenticato'}), 401
+    
+    league = League.query.filter_by(code=league_code).first_or_404()
+    message = ChatMessage.query.get_or_404(message_id)
+    
+    # Verifica permessi
+    if message.user_id != session['user_id'] and league.owner_id != session['user_id']:
+        return jsonify({'error': 'Non autorizzato'}), 403
+    
+    # Elimina file allegati
+    for attachment in message.attachments:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], attachment.filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    
+    db.session.delete(message)
+    db.session.commit()
+    
+    return jsonify({'status': 'ok', 'deleted_id': message_id})
+
 
 @app.route("/league/<league_id>/delete", methods=["POST"])
 def delete_league(league_id):

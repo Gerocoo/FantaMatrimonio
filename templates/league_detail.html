@@ -51,6 +51,7 @@
 </section>
 {% endif %}
 
+<!-- CHAT CONTAINER (UNA SOLA VOLTA!) -->
 <div id="chat-container">
   <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
     💬
@@ -66,18 +67,46 @@
       right: -5px;
     ">0</span>
   </button>
+  
   <div id="chat-float" class="chat-popup" style="display:none;">
     <header class="chat-header">
       <span>Chat</span>
       <button onclick="closeChat()" class="close-chat">&times;</button>
     </header>
+    
     <div id="chat-messages" class="chat-body"></div>
+    
     <form id="chat-form" class="chat-input-form" autocomplete="off">
-      <input id="chat-input" type="text" placeholder="Scrivi un messaggio..." required />
-      <button type="submit" class="btn btn-primary">Invia</button>
+      <div class="chat-input-wrapper">
+        <!-- Pulsante allega file -->
+        <button type="button" class="attach-btn" title="Allega file">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <input type="file" id="file-input" style="display: none;" multiple />
+        
+        <textarea 
+          id="chat-input" 
+          placeholder="Scrivi un messaggio..." 
+          rows="1"></textarea>
+        
+        
+        
+        
+        <button type="submit" id="send-btn" class="send-btn" title="Invia">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Preview file allegati -->
+      <div id="file-preview" class="file-preview"></div>
     </form>
   </div>
 </div>
+<!-- FINE CHAT CONTAINER -->
 
 <script>
 const leagueId = "{{ league.code }}";
@@ -87,8 +116,56 @@ const chatInput = document.getElementById("chat-input");
 const chatFloat = document.getElementById("chat-float");
 const chatBtn = document.getElementById("toggle-chat");
 const chatBadge = document.getElementById("chat-badge");
+const sendBtn = document.getElementById("send-btn");
+const attachBtn = document.querySelector(".attach-btn");
+const fileInput = document.getElementById("file-input");
+const filePreview = document.getElementById("file-preview");
+
 let lastSeenMessageId = null;
 let unreadCount = 0;
+let selectedFiles = [];
+let audioChunks = [];
+
+
+// Funzione per aggiornare visibilità pulsanti
+function updateButtonsVisibility() {
+  const hasText = chatInput.value.trim() !== '';
+  
+  // Mostra "Invia" se c'è testo O file allegati
+  if (hasText) {
+    sendBtn.disabled = false;
+  } else {
+    sendBtn.disabled = true;
+  }
+}
+
+// Auto-resize della textarea
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  updateButtonsVisibility();
+});
+
+// Enter per inviare, Shift+Enter per nuova riga
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Click sul pulsante invia
+sendBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  sendMessage();
+});
+
+
+
+
+
+
 
 function updateBadge() {
   if (unreadCount > 0) {
@@ -114,9 +191,25 @@ function loadMessages() {
     .then(messages => {
       chatMessages.innerHTML = '';
       messages.forEach(m => {
+        let content = `<strong>${m.user}:</strong> ${m.message}`;
+        
+        if (m.attachments && m.attachments.length > 0) {
+          content += '<div class="attachments">';
+          m.attachments.forEach(att => {
+            if (att.type === 'image') {
+              content += `<img src="${att.url}" style="max-width:200px;border-radius:8px;margin-top:5px;">`;
+            } else if (att.type === 'audio') {
+              content += `<audio controls style="margin-top:5px;"><source src="${att.url}"></audio>`;
+            } else {
+              content += `<a href="${att.url}" download style="display:block;margin-top:5px;">📎 ${att.name}</a>`;
+            }
+          });
+          content += '</div>';
+        }
+        
         chatMessages.innerHTML += `
-          <div style="background:#eee;color:#222;padding:4px;margin:3px;">
-            <strong>${m.user}:</strong> ${m.message}
+          <div style="background:#eee;color:#222;padding:8px;margin:5px;border-radius:8px;">
+            ${content}
             <span style="font-size:0.8em;color:#666;margin-left:8px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
           </div>`;
       });
@@ -147,6 +240,35 @@ function checkNewMessages() {
     });
 }
 
+function sendMessage() {
+  const msg = chatInput.value.trim();
+  if(!msg && selectedFiles.length === 0) return;
+  
+  const formData = new FormData();
+  formData.append('message', msg);
+  
+  selectedFiles.forEach((file, index) => {
+    formData.append(`file_${index}`, file);
+  });
+  
+  fetch(`/league/${leagueId}/chat`, {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(() => {
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    selectedFiles = [];
+    fileInput.value = '';
+    updateButtonsVisibility(); // ← AGGIUNTO: Reset pulsanti dopo invio
+    loadMessages();
+  })
+  .catch(error => {
+    alert('Errore nell\'invio: ' + error.message);
+  });
+}
+
 chatBtn.onclick = () => {
   if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
     chatFloat.style.display = "block";
@@ -157,22 +279,6 @@ chatBtn.onclick = () => {
     chatFloat.style.display = "none";
   }
 };
-
-chatForm.addEventListener("submit", e => {
-  e.preventDefault();
-  const msg = chatInput.value.trim();
-  if(!msg) return;
-  fetch(`/league/${leagueId}/chat`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({message: msg})
-  })
-  .then(res => res.json())
-  .then(() => {
-    chatInput.value = '';
-    loadMessages();
-  });
-});
 
 setInterval(() => {
   if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
@@ -195,16 +301,28 @@ function confirmDelete() {
     document.getElementById("deleteLeagueForm").submit();
   }
 }
+
+// Inizializza stato pulsanti all'avvio
+updateButtonsVisibility();
 </script>
 
+
 <main>
-  <!-- CLASSIFICA MEMBRI - Card Style -->
   <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">Classifica Membri</h2>
   {% if members %}
     <div class="ranking-cards-container">
       {% for member in members %}
-      <div class="ranking-card">
-        <div class="ranking-position">{{ loop.index }}</div>
+      <div class="ranking-card"><div class="ranking-position">
+  {% if loop.index == 1 %}
+    🥇
+  {% elif loop.index == 2 %}
+    🥈
+  {% elif loop.index == 3 %}
+    🥉
+  {% else %}
+    {{ loop.index }}
+  {% endif %}
+</div>
         <div class="ranking-info">
           <h3>{{ member.name }}</h3>
           <p class="ranking-score">{{ "%.2f"|format(member.total_score) }}</p>
@@ -216,7 +334,6 @@ function confirmDelete() {
     <p class="no-data">Nessun membro ancora</p>
   {% endif %}
 
-  <!-- FATTORI DI VALUTAZIONE - Card Style -->
   <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
   {% if factors %}
     <div class="factors-cards-container">
