@@ -432,7 +432,10 @@ def reset_password(token):
         return redirect(url_for('login'))
     
     return render_template("reset_password.html", token=token)
-
+@app.route('/.well-known/assetlinks.json')
+def assetlinks():
+    return send_from_directory('static/.well-known', 'assetlinks.json',
+                             mimetype='application/json')
 @app.route('/sw.js')
 def service_worker():
     response = send_from_directory('static', 'sw.js', 

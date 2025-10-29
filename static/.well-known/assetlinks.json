@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "it.therealfantamatrimonio.twa",
+    "sha256_cert_fingerprints": ["B9:91:1B:8F:AA:02:AA:A4:8B:4E:D6:D4:28:3B:50:EE:58:98:1D:88:0C:0B:34:A5:4E:A2:9B:D8:B4:BA:A9:1F"]
+  }
+}]
