@@ -1,0 +1,23 @@
+{
+  "name": "FantaMatrimonio",
+  "short_name": "FMatrimonio",
+  "description": "FantaMatrimonio – Il Gioco per Scommettere sul Tuo Futuro (o su Quello degli Altri!)\n\nCos’è:\nFantaMatrimonio è un gioco ironico e goliardico in cui si scommette sulle probabilità di matrimonio di amici, coppie o single (anche famosi!). Ogni giocatore crea un avatar (di sé o di altri) e partecipa a una Lega per accumulare punti basati su vari fattori di vita, amore e destino.\n\n⚙️ Come si gioca\n\n1. La Lega:\n- Si crea o si entra in una Lega con amici.\n- Le regole e i punteggi si decidono a maggioranza.\n- Tutti possono votare, anche chi è “oggetto” del punteggio.\n\n2. I Giocatori:\n- Ognuno sceglie un avatar (reale o inventato).\n- Massima inclusività: sesso e ruolo liberi.\n\n3. I Fattori:\nLe probabilità di matrimonio dipendono da categorie come:\n- Stabilità personale (età, lavoro, reddito, carattere)\n- Relazione (durata, convivenza, figli, proposta)\n- Personalità e stile di vita (interessi, compatibilità)\n- Ambiente esterno (famiglia, amici, socialità)\nOgni fattore vale da -100 a +100 punti, decisi dalla Lega.\n\n4. Il Punteggio:\n- Si sommano i punti di ciascun fattore.\n- Il punteggio più alto = più probabile matrimonio.\n- Le modifiche alle regole si fanno solo con unanimità.\n- Vince (o perde, a scelta della Lega) chi si sposa davvero!\n\n5. Premi e Penalità:\n- Goliardici e decisi all’inizio (es. feste, penitenze, sfide).\n\n6. Spirito del Gioco:\n- Ironia, leggerezza e rispetto reciproco.\n- Non si giudica, si ride insieme delle previsioni amorose.\n\nEsempi di Fattori (versione semiseria):\n- Età 30-34 → +60 punti (“orologio biologico tic-tac”)\n- Laurea magistrale → +60 punti (“cervellone in amore”)\n- Convivenza → +40 punti (“test superato!”)\n- Disoccupato → -20 punti (“naufragio romantico”)\n- Desiderio reciproco di sposarsi → +40 punti\n- Nessun hobby in comune → -20 punti\n- Vincita alla lotteria → +40 punti (“amore dorato”)\n\nNota Bene:\nI fattori sono solo esempi. Ogni Lega può personalizzarli o inventarne di nuovi.\nIl gioco è puramente ironico, senza alcuna intenzione offensiva o discriminatoria.\nServe solo a divertirsi, scherzare e… magari azzeccare chi dirà per primo: 💍 “Sì, lo voglio!”",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    
+    }
+  ]
+}

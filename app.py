@@ -17,6 +17,7 @@ from mailtrap import MailtrapClient, Mail, Address
 import logging
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+from flask import send_from_directory
 
 
 try:
@@ -432,7 +433,17 @@ def reset_password(token):
     
     return render_template("reset_password.html", token=token)
 
+@app.route('/sw.js')
+def service_worker():
+    response = send_from_directory('static', 'sw.js', 
+                                  mimetype='application/javascript')
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json', 
+                             mimetype='application/manifest+json')
 @app.route("/")
 def home():
     search_query = request.args.get('search', '').strip()
