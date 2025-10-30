@@ -1,52 +1,66 @@
-// Nome della cache (cambia versione per forzare aggiornamenti)
-const CACHE_NAME = 'fantamatrimonio-cache-v1';
-
-// File da memorizzare nella cache
-const urlsToCache = [
-  '/',
-  '/static/manifest.json',
+const CACHE_NAME = 'fanta-matrimonio-v2';  // Cambia versione per forzare l'update
+const STATIC_CACHE = [
   '/static/fanta.css',
-  '/static/logo.png'
+  '/static/logo.png',
+  '/static/default.png',
+  '/static/google-icon.png',
+  '/static/bkground.jpg',
+  '/static/manifest.json'
 ];
 
-// Installazione del Service Worker
-self.addEventListener('install', event => {
+// Installazione: cacha solo risorse statiche
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_CACHE))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting(); // attiva subito il nuovo SW
 });
 
-// Gestione delle richieste
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      // Usa la cache se disponibile, altrimenti prova a recuperare dalla rete
-      return (
-        response ||
-        fetch(event.request).catch(() => {
-          // Se offline e la richiesta è di navigazione, mostra la home
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
+// Attivazione: pulisci cache vecchie
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Attivazione e pulizia vecchie cache
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames =>
-      Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
+// Fetch: strategia "Network First" per HTML, "Cache First" per static
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // NON cachare mai pagine HTML o API calls
+  if (url.pathname === '/' || 
+      !url.pathname.startsWith('/static/') ||
+      event.request.method !== 'GET') {
+    // Network First - sempre dal server per pagine dinamiche
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // Cache First per risorse statiche
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).then(response => {
+          if (!response || response.status !== 200) {
+            return response;
           }
-        })
-      )
-    )
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(event.request, responseToCache));
+          return response;
+        });
+      })
   );
-  self.clients.claim(); // attiva subito sui client aperti
 });

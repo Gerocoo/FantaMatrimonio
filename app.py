@@ -447,12 +447,19 @@ def service_worker():
 def manifest():
     return send_from_directory('static', 'manifest.json', 
                              mimetype='application/manifest+json')
+
 @app.route("/")
 def home():
+    print("=" * 50)
+    print("DEBUGGING HOMEPAGE - INIZIO")
+    print(f"Session keys: {list(session.keys())}")
+    print(f"user_id: {session.get('user_id')}")
+    print(f"avatar: {session.get('avatar')}")
+    print("=" * 50)
+    
     search_query = request.args.get('search', '').strip()
     
     if search_query:
-        # Cerca per nome lega o username del proprietario
         leagues = League.query.join(User, League.owner_id == User.id).filter(
             db.or_(
                 League.name.ilike(f'%{search_query}%'),
@@ -461,11 +468,16 @@ def home():
             League.is_active == True
         ).all()
     else:
-        # Mostra tutte le leghe attive
         leagues = League.query.filter_by(is_active=True).all()
     
+    print(f"Leghe trovate: {len(leagues)}")
+    
+    print("=" * 50)
+    print("DEBUGGING HOMEPAGE - FINE")
+    print(f"Session keys prima del render: {list(session.keys())}")
+    print("=" * 50)
+    
     return render_template("index.html", leagues=leagues, search_query=search_query)
-
 @app.route("/rules")
 def rules():
     return render_template("rules.html")
