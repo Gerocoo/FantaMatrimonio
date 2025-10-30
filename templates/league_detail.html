@@ -185,13 +185,26 @@ function closeChat() {
   chatFloat.style.display = "none";
 }
 
+function getUserColor(username) {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  // Genera colori saturi e luminosi
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 45%)`;
+}
+
 function loadMessages() {
   fetch(`/league/${leagueId}/chat`)
     .then(res => res.json())
     .then(messages => {
       chatMessages.innerHTML = '';
       messages.forEach(m => {
-        let content = `<strong>${m.user}:</strong> ${m.message}`;
+        const userColor = getUserColor(m.user);
+        
+        let content = `<strong style="color: ${userColor};">${m.user}</strong>: <span style="color: #222;">${m.message}</span>`;
         
         if (m.attachments && m.attachments.length > 0) {
           content += '<div class="attachments">';
@@ -208,9 +221,9 @@ function loadMessages() {
         }
         
         chatMessages.innerHTML += `
-          <div style="background:#eee;color:#222;padding:8px;margin:5px;border-radius:8px;">
+          <div style="background:#f5f5f5;padding:8px;margin:5px;border-radius:8px;">
             ${content}
-            <span style="font-size:0.8em;color:#666;margin-left:8px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            <span style="font-size:0.8em;color:#999;margin-left:8px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
           </div>`;
       });
       if(messages.length > 0) {
