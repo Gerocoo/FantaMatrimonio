@@ -1363,6 +1363,42 @@ def league_detail(league_id):
         is_owner=is_owner
     )
 
+@app.route('/league/<int:league_id>/stats')
+def league_stats(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    league = League.query.get_or_404(league_id)
+    members = LeagueMember.query.filter_by(league_id=league_id).all()
+    
+    stats = {
+        'totale_voti': len(members),
+        'membro_piu_votato': max(members, key=lambda m: m.total_score).name if members else "Nessuno",
+        'membro_meno_votato': min(members, key=lambda m: m.total_score).name if members else "Nessuno",
+        'voto_medio': round(sum([m.total_score for m in members]) / len(members), 2) if members else 0,
+        'disparita': round(max([m.total_score for m in members]) - min([m.total_score for m in members]), 2) if members else 0,
+    }
+    
+    # Frasi goliardiche e sessualmente allusive
+    funny_phrases = [
+        f"⛓️‍💥 {stats['membro_piu_votato']}  presto in galera ",
+        f"🤏 {stats['membro_meno_votato']} si vede che ce l'ha piccolo... almeno secondo i voti ricevuti!",
+        f"📏 Disparità di {stats['disparita']} - Come la differenza tra chi sa usarlo e chi no!",
+        f"💪 {stats['membro_piu_votato']} Ha i coglioni quadrati..e le tasche vuote",
+        f"💦 {stats['membro_meno_votato']} spargerà seme per il mondo...",
+        f"🍌 {stats['membro_piu_votato']} conquista tutti con quel che si vede nei pantaloni!",
+        f"😂 Voto medio {stats['voto_medio']} - Non è male per chi non sa neanche come funziona!",
+    ]
+    
+    import random
+    funny_phrase = random.choice(funny_phrases)
+    
+    return render_template('league_stats.html', 
+                         league=league, 
+                         stats=stats,
+                         funny_phrase=funny_phrase,
+                         members=members)
+
 @app.route("/league/join", methods=["GET", "POST"])
 def join_league():
     if 'user_id' not in session:

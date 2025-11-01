@@ -44,8 +44,7 @@
         value="{{ search_query or '' }}"
         class="search-input"
       >
-      <button type="submit" class="search-icon-btn""></button>
-      
+      <button type="submit" class="search-icon-btn"></button>
     </form>
   </div>
   <h2>Leghe Disponibili</h2>
@@ -60,8 +59,6 @@
       
       <div class="league-info-row">
         <span class="badge">Codice: {{ league.code }}</span>
-        {% if league.password_hash %}
-        {% endif %}
       </div>
 
       <button class="btn-join" 
@@ -69,20 +66,8 @@
         data-league-code="{{ league.code }}" 
         data-league-name="{{ league.name }}" 
         data-has-password="{{ 'true' if league.password_hash else 'false' }}">
-    Entra
-</button>
-
-<script>
-document.querySelectorAll('.btn-join').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const leagueId = this.dataset.leagueId;
-        const leagueCode = this.dataset.leagueCode;
-        const leagueName = this.dataset.leagueName;
-        const hasPassword = this.dataset.hasPassword === 'true';
-        openJoinPopup(leagueId, leagueCode, leagueName, hasPassword);
-    });
-});
-</script>
+        Entra
+      </button>
     </div>
     {% endfor %}
   </div>
@@ -99,7 +84,7 @@ document.querySelectorAll('.btn-join').forEach(btn => {
     <h3 id="popupLeagueName" style="margin-bottom: 1rem; color: var(--primary);">Nome Lega</h3>
     <p id="popupLeagueCode" style="color: #666; margin-bottom: 1.5rem;">Codice: XXXX</p>
     
-    <form id="joinForm" method="POST" action="{{ url_for('join_league') }}">
+    <form id="joinForm" method="POST" action="{{ url_for('join_league') }}" onsubmit="saveLeagueCodeForRedirect()">
       <input type="hidden" name="code" id="hiddenCode" value="">
       
       <div id="passwordSection" style="display: none;">
@@ -112,8 +97,7 @@ document.querySelectorAll('.btn-join').forEach(btn => {
           style="width: 100%; padding: 0.75rem; border: 2px solid var(--input); border-radius: var(--radius); margin-bottom: 1rem;">
       </div>
       
-      <div style="display: flex;gap: 1rem;flex-direction: column;">
-        
+      <div style="display: flex; gap: 1rem; flex-direction: column;">
         <button type="submit" class="btn btn-primary" style="flex: 1; margin: 0;">
           Conferma
         </button>
@@ -121,12 +105,21 @@ document.querySelectorAll('.btn-join').forEach(btn => {
           Annulla
         </button>
       </div>
-        
     </form>
   </div>
 </div>
 
 <script>
+document.querySelectorAll('.btn-join').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const leagueId = this.dataset.leagueId;
+        const leagueCode = this.dataset.leagueCode;
+        const leagueName = this.dataset.leagueName;
+        const hasPassword = this.dataset.hasPassword === 'true';
+        openJoinPopup(leagueId, leagueCode, leagueName, hasPassword);
+    });
+});
+
 function openJoinPopup(leagueId, leagueCode, leagueName, hasPassword) {
   document.getElementById('joinPopupOverlay').style.display = 'flex';
   document.getElementById('popupLeagueName').textContent = leagueName;
@@ -151,6 +144,13 @@ function closeJoinPopup() {
   document.getElementById('leaguePassword').value = '';
 }
 
+// NUOVO: Salva il codice della lega prima di mandare al login
+function saveLeagueCodeForRedirect() {
+  const code = document.getElementById('hiddenCode').value;
+  sessionStorage.setItem('redirect_to_league', code);
+  // Il form si sottomette normalmente
+}
+
 // Chiudi il popup premendo ESC
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape') {
@@ -158,7 +158,19 @@ document.addEventListener('keydown', function(event) {
   }
 });
 </script>
+<script>
+// Dopo il login riuscito, controlla se c'è una lega da raggiungere
+document.addEventListener('DOMContentLoaded', function() {
+  // Se sei già loggato e c'è una lega salvata in sessionStorage
+  if ('{{ session.get("user_id") }}') {
+    const redirectLeague = sessionStorage.getItem('redirect_to_league');
+    if (redirectLeague) {
+      // Reindirizza al join con il codice della lega
+      window.location.href = `/league/join?code=${redirectLeague}`;
+      sessionStorage.removeItem('redirect_to_league');
+    }
+  }
+});
+</script>
 
 {% endblock %}
-
-

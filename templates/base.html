@@ -3,20 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="{{ url_for('static', filename='logo-192x192.png') }}" type="image/png">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo-192x192.png') }}">
+  
   <title>{% block title %}FantaMatrimonio{% endblock %}</title>
   <meta name="description" content="FantaMatrimonio - Il gioco di scommesse più divertente e goliardico che mette alla prova la conoscenza dei vostri amici (e di voi stessi!)">
-  <link rel="icon" href="{{ url_for('static', filename='default.png') }}" />
+  
+  <!-- Favicon e Icons -->
+  <link rel="icon" href="{{ url_for('static', filename='logo-192x192.png') }}" type="image/png">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo-192x192.png') }}">
+  
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}">
+  
+  <!-- PWA Manifest -->
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <meta name="theme-color" content="#007bff">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#ffffff">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Mobile Theme -->
+  <meta name="theme-color" content="#d9a9f5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
+
 <body>
   <nav class="navbar">
   <a href="{{ url_for('home') }}" class="brand-logo">FantaMatrimonio</a>

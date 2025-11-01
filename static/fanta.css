@@ -413,6 +413,84 @@ leghe-home h2 {
   transform: translateY(-3px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
 }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #f5a9d0 0%, #d9a9f5 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s;
+}
+
+.stat-box:hover {
+  transform: translateY(-5px);
+}
+
+.stat-box h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+}.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #f5a9d0 0%, #d9a9f5 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s;
+}
+
+.stat-box:hover {
+  transform: translateY(-5px);
+}
+
+.stat-box h3 {
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  color: white;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+.funny-box {
+  background: linear-gradient(135deg, #f5a9d0 0%, #d9a9f5 100%) !important;
+  text-align: center !important;
+  margin: 2rem auto !important;
+  padding: 1.5rem !important;
+  max-width: 90% !important;
+  border-radius: 12px !important;
+}
+
+.funny-box p {
+  font-size: 1.2rem;
+  color: white;
+  font-weight: 600;
+  margin: 0 !important;
+}
+
 
 .google-button {
   background-color:transparent;
@@ -2476,7 +2554,9 @@ table.table-ranking tbody td {
    POPUP OVERLAY & CONTAINER
    ============================================ */
 .popup-overlay {
+  
   position: fixed;
+  
   top: 0;
   left: 0;
   right: 0;
@@ -2878,6 +2958,10 @@ leghe-home h2 {
   font-family: "Montserrat", sans-serif;
 }
 
+    form {
+        padding: 2rem 1.5rem;
+        
+    }
 #profileDropdown {
   display: flex;
   align-items: center;

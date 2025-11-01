@@ -11,6 +11,7 @@
   
   <div class="actions" style="text-align:center; margin:2rem 0;">
     {% if is_member %}
+    <a href="{{ url_for('league_stats', league_id=league.id) }}" class="btn btn-secondary">Statistiche</a>
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
       <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
       <button onclick="toggleForm('leaveLeagueForm')" class="btn btn-secondary"> 
