@@ -2,10 +2,6 @@
 {% block title %}{{ league.name }} - FantaMatrimonio{% endblock %}
 {% block content %}
 
-<script>
-    const currentUser = "{{ session.get('username')|tojson }}";
-</script>
-
 <!-- INFO LEGA -->
 <section class="league-info card">
   <h2>{{ league.name }}</h2>
@@ -26,9 +22,7 @@
       <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
       <button onclick="toggleForm('deleteMembersForm')" class="btn btn-primary">Elimina membri</button>
       <button onclick="toggleForm('deleteLeagueForm')" class="btn btn-primary">Elimina Lega</button>
-      {% if is_owner %}
-  <a href="{{ url_for('manage_blacklist', league_id=league.id) }}" class="btn btn-secondary">Gestisci Blacklist</a>
-{% endif %}
+      <a href="{{ url_for('manage_blacklist', league_id=league.id) }}" class="btn btn-secondary">Gestisci Blacklist</a>
     {% endif %}
   </div>
   
@@ -39,6 +33,8 @@
   {% endif %}
 
   <input type="hidden" id="leagueId" value="{{ league.id }}">
+  <input type="hidden" id="currentUserId" value="{{ session.get('user_id') }}">
+  <input type="hidden" id="leagueCode" value="{{ league.code }}">
 </section>
 
 <!-- FORM LASCIA LEGA -->
@@ -199,7 +195,10 @@
 </main>
 
 <script>
-const leagueId = "{{ league.code }}";
+// Leggi variabili dai campi hidden
+const leagueCode = document.getElementById("leagueCode").value;
+const currentUserId = parseInt(document.getElementById("currentUserId").value);
+
 const chatMessages = document.getElementById("chat-messages");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
@@ -260,37 +259,36 @@ function getUserColor(username) {
     hash = username.charCodeAt(i) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash % 360);
-  return `hsl(${hue}, 70%, 45%)`;
+  return 'hsl(' + hue + ', 70%, 45%)';
 }
 
 function loadMessages() {
-  fetch(`/league/${leagueId}/chat`)
+  fetch('/league/' + leagueCode + '/chat')
     .then(res => res.json())
     .then(messages => {
       chatMessages.innerHTML = '';
       messages.forEach(m => {
         const userColor = getUserColor(m.user);
-        let content = `<strong style="color: ${userColor};">${m.user}</strong>: <span style="color: #222;">${m.message}</span>`;
+        let content = '<strong style="color: ' + userColor + ';">' + m.user + '</strong>: <span style="color: #222;">' + m.message + '</span>';
         
         if (m.attachments && m.attachments.length > 0) {
           content += '<div class="attachments">';
           m.attachments.forEach(att => {
             if (att.type === 'image') {
-              content += `<img src="${att.url}" style="max-width:200px;border-radius:8px;margin-top:5px;">`;
+              content += '<img src="' + att.url + '" style="max-width:200px;border-radius:8px;margin-top:5px;">';
             } else if (att.type === 'audio') {
-              content += `<audio controls style="margin-top:5px;"><source src="${att.url}"></audio>`;
+              content += '<audio controls style="margin-top:5px;"><source src="' + att.url + '"></audio>';
             } else {
-              content += `<a href="${att.url}" download style="display:block;margin-top:5px;">📎 ${att.name}</a>`;
+              content += '<a href="' + att.url + '" download style="display:block;margin-top:5px;">📎 ' + att.name + '</a>';
             }
           });
           content += '</div>';
         }
         
-        chatMessages.innerHTML += `
-          <div style="background:#f5f5f5;padding:8px;margin:5px;border-radius:8px;">
-            ${content}
-            <span style="font-size:0.8em;color:#999;margin-left:8px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-          </div>`;
+        chatMessages.innerHTML += '<div style="background:#f5f5f5;padding:8px;margin:5px;border-radius:8px;">' +
+            content +
+            '<span style="font-size:0.8em;color:#999;margin-left:8px;">' + new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</span>' +
+          '</div>';
       });
       if(messages.length > 0) {
         lastSeenMessageId = messages[messages.length - 1].id;
@@ -298,6 +296,9 @@ function loadMessages() {
       unreadCount = 0;
       updateBadge();
       chatMessages.scrollTop = chatMessages.scrollHeight;
+    })
+    .catch(error => {
+      console.error('Errore caricamento messaggi:', error);
     });
 }
 
@@ -309,10 +310,10 @@ function sendMessage() {
   formData.append('message', msg);
   
   selectedFiles.forEach((file, index) => {
-    formData.append(`file_${index}`, file);
+    formData.append('file_' + index, file);
   });
   
-  fetch(`/league/${leagueId}/chat`, {
+  fetch('/league/' + leagueCode + '/chat', {
     method: "POST",
     body: formData
   })
@@ -331,7 +332,7 @@ function sendMessage() {
 }
 
 function checkNewMessages() {
-  fetch(`/league/${leagueId}/chat`)
+  fetch('/league/' + leagueCode + '/chat')
     .then(res => res.json())
     .then(messages => {
       if(messages.length === 0) return;
@@ -345,10 +346,13 @@ function checkNewMessages() {
         updateBadge();
         lastSeenMessageId = messages[messages.length - 1].id;
       }
+    })
+    .catch(error => {
+      console.error('Errore controllo messaggi:', error);
     });
 }
 
-chatBtn.onclick = () => {
+chatBtn.onclick = function() {
   if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
     chatFloat.style.display = "block";
     unreadCount = 0;
@@ -359,7 +363,7 @@ chatBtn.onclick = () => {
   }
 };
 
-setInterval(() => {
+setInterval(function() {
   if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
     checkNewMessages();
   } else {
@@ -367,12 +371,15 @@ setInterval(() => {
   }
 }, 4000);
 
-fetch(`/league/${leagueId}/chat`)
+fetch('/league/' + leagueCode + '/chat')
   .then(res => res.json())
   .then(messages => {
     if(messages.length > 0) {
       lastSeenMessageId = messages[messages.length - 1].id;
     }
+  })
+  .catch(error => {
+    console.error('Errore inizializzazione chat:', error);
   });
 
 updateButtonsVisibility();
@@ -384,7 +391,7 @@ function generateMemberButtons() {
   
   membersList.innerHTML = '';
   
-  memberElements.forEach(el => {
+  memberElements.forEach(function(el) {
     const memberId = el.getAttribute('data-member-id');
     const memberName = el.getAttribute('data-member-name');
     
@@ -392,7 +399,9 @@ function generateMemberButtons() {
     button.type = 'button';
     button.className = 'member-button';
     button.textContent = memberName;
-    button.onclick = () => openConfirmDelete(memberId, memberName);
+    button.onclick = function() {
+      openConfirmDelete(memberId, memberName);
+    };
     
     membersList.appendChild(button);
   });
@@ -407,15 +416,21 @@ function toggleForm(formId) {
 }
 
 function confirmLeaveLeague(leagueId) {
-  fetch(`/league/${leagueId}/leave`, {
+  fetch('/league/' + leagueId + '/leave', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     }
   })
-  .then(response => response.json())
-  .then(() => {
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function() {
     window.location.href = '/';
+  })
+  .catch(function(error) {
+    console.error('Errore:', error);
+    alert('Errore durante l\'uscita dalla lega');
   });
 }
 
@@ -434,17 +449,18 @@ function confirmSingleDelete() {
   if (!selectedMemberId) return;
   
   const leagueId = document.getElementById('leagueId').value;
-  const currentUserId = {{ session.get('user_id') }};
   
-  fetch(`/league/${leagueId}/delete_members`, {
+  fetch('/league/' + leagueId + '/delete_members', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ member_ids: [selectedMemberId] })
   })
-  .then(response => response.json())
-  .then(data => {
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(data) {
     if (data.status === 'success') {
       if (data.eliminated_users.includes(currentUserId)) {
         window.location.href = '/dashboard';
@@ -455,52 +471,13 @@ function confirmSingleDelete() {
       alert('Errore: ' + data.message);
     }
   })
-  .catch(error => {
+  .catch(function(error) {
     console.error('Fetch error:', error);
     alert('Errore nella richiesta: ' + error.message);
   });
   
-  closeConfirmModal(); // <-- AGGIUNGI QUESTA RIGA
-} // <-- QUESTA PARENTESI MANCAVA!
-
-function confirmDeleteLeague() {
-  document.getElementById("deleteLeagueForm_hidden").submit();
+  closeConfirmModal();
 }
-
-function generateMemberButtons() {
-  const memberElements = document.querySelectorAll('[data-member-id]');
-  const membersList = document.getElementById('membersButtonsList');
-  
-  membersList.innerHTML = '';
-  
-  memberElements.forEach(el => {
-    const memberId = el.getAttribute('data-member-id');
-    const memberName = el.getAttribute('data-member-name');
-    
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'member-button';
-    button.textContent = memberName;
-    button.onclick = () => openConfirmDelete(memberId, memberName);
-    
-    membersList.appendChild(button);
-  });
-}
-
-function openConfirmDelete(memberId, memberName) {
-  selectedMemberId = memberId;
-  document.getElementById('memberNameToDelete').textContent = memberName;
-  document.getElementById('confirmDeleteModal').style.display = 'block';
-}
-
-function closeConfirmModal() {
-  document.getElementById('confirmDeleteModal').style.display = 'none';
-  selectedMemberId = null;
-}
-
-
-
-
 
 function confirmDeleteLeague() {
   document.getElementById("deleteLeagueForm_hidden").submit();

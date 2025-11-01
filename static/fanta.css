@@ -414,24 +414,45 @@ leghe-home h2 {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
 }
 
-.btn-google {
-  background: var(--card);
-  color: var(--card-foreground);
-  border: 2px solid var(--border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.google-button {
+  background-color:transparent;
+  backface-visibility:visible; 
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.btn-google:hover {
-  background: var(--muted);
-  border-color: var(--primary);
+.google-button:hover {
+  background-color: #f8f8f8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
-.btn-google img {
+.google-button:active {
+
+box-shadow: none;
+}
+
+.google-button img {
+  width: 20px;
   height: 20px;
-  vertical-align: middle;
-  margin-right: 10px;
+  filter: drop-shadow(0 0 0px transparent);
 }
 
+.google-button:active {
+  outline: none;
+  background-color: white !important;
+  color: #333 !important;
+  box-shadow: none !important;
+}
+
+.google-button:focus {
+  outline: none;
+}
 .btn-secondary {
   background: var(--secondary);
   color: var(--secondary-foreground);
