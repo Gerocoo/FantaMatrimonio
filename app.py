@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from sqlalchemy.ext.hybrid import hybrid_property
 from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -18,6 +19,7 @@ import logging
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from flask import send_from_directory
+
 
 
 try:
@@ -64,10 +66,14 @@ class User(db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     email_token = db.Column(db.String(128))
     owned_leagues = db.relationship('League', backref='owner', lazy=True, foreign_keys='League.owner_id')
-    memberships = db.relationship('LeagueMember', backref='user', lazy=True)
+    
+    # CAMBIA QUESTA RIGA:
+    memberships = db.relationship('LeagueMember', back_populates='user', lazy=True)  # back_populates, non backref!
+    
     votes = db.relationship('FactorVote', backref='voter', lazy=True)
     reset_token = db.Column(db.String(100), unique=True)
     reset_token_expiry = db.Column(db.DateTime)
+
 
 class ChatMessage(db.Model):
     """Modello per i messaggi della chat"""
@@ -86,6 +92,13 @@ class ChatMessage(db.Model):
     
     def __repr__(self):
         return f'<ChatMessage {self.id} by {self.user.username}>'
+
+class BlacklistedMember(db.Model):
+    __tablename__ = 'blacklisted_members'
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    removed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class ChatAttachment(db.Model):
@@ -137,13 +150,22 @@ class LeagueMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(200), nullable=False)
     age = db.Column(db.Integer)
     avatar = db.Column(db.String(255), default="default.png")
     is_competing = db.Column(db.Boolean, default=True)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     total_score = db.Column(db.Float, default=0.0)
+    is_banned = db.Column(db.Boolean, default=False)
+    
+    # CAMBIA QUESTA RIGA:
+    user = db.relationship('User', back_populates='memberships')  # back_populates, non backref!
+    
     votes_received = db.relationship('FactorVote', backref='member', lazy=True)
+    
+    @hybrid_property
+    def name(self):
+        return self.user.username if self.user else "Unknown"
+
 
 class Factor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -366,6 +388,67 @@ def send_reset_password_email(user_email, username, reset_url):
     except Exception as e:
         print(f"Errore invio email reset password: {e}")
         return False
+
+
+@app.route('/league/<int:league_id>/leave', methods=['POST'])
+def leave_league(league_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    league = League.query.get_or_404(league_id)
+    member = LeagueMember.query.filter_by(league_id=league_id, user_id=session['user_id']).first_or_404()
+    
+    if league.owner_id == session['user_id']:
+        return jsonify({'error': 'Non puoi uscire dalla lega di cui sei admin!'}), 403
+    
+    db.session.delete(member)
+    db.session.commit()
+    
+    flash(f'Sei uscito dalla lega {league.name}!', 'success')
+    return jsonify({'status': 'success'})
+
+
+@app.route('/league/<int:league_id>/delete_members', methods=['POST'])
+def delete_league_members(league_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    league = League.query.get_or_404(league_id)
+    
+    if league.owner_id != session['user_id']:
+        return jsonify({'status': 'error', 'message': 'Solo il creatore può eliminare i membri'}), 403
+    
+    member_ids = request.json.get('member_ids', [])
+    
+    if not member_ids:
+        return jsonify({'status': 'error', 'message': 'Nessun membro selezionato'}), 400
+    
+    eliminated_users = []
+    
+    for member_id in member_ids:
+        member = LeagueMember.query.filter_by(id=member_id, league_id=league_id).first()
+        
+        if member and member.user_id != league.owner_id:
+            blacklisted = BlacklistedMember(league_id=league_id, user_id=member.user_id)
+            db.session.add(blacklisted)
+            db.session.delete(member)
+            eliminated_users.append(member.user_id)
+        elif member and member.user_id == league.owner_id:
+            return jsonify({'status': 'error', 'message': 'Non puoi eliminare il creatore della lega'}), 403
+    
+    db.session.commit()
+    calculate_member_scores(league_id)
+    
+    # Imposta un messaggio flash per gli utenti espulsi
+    for user_id in eliminated_users:
+        if user_id == session.get('user_id'):
+            session['expelled_from'] = league.name
+    
+    return jsonify({
+        'status': 'success', 
+        'message': f'{len(member_ids)} membro/i eliminato/i',
+        'eliminated_users': eliminated_users
+    }), 200
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
@@ -653,6 +736,44 @@ def register():
         return render_template("register.html")
     
 
+@app.route('/league/<int:league_id>/blacklist', methods=['GET', 'POST'])
+def manage_blacklist(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    league = League.query.get_or_404(league_id)
+    
+    if league.owner_id != session['user_id']:
+        flash('Solo il creatore può gestire la blacklist', 'warning')
+        return redirect(url_for('league_detail', league_id=league_id))
+    
+    if request.method == 'POST':
+        user_id = request.form.get('user_id', type=int)
+        action = request.form.get('action')
+        
+        blacklisted = BlacklistedMember.query.filter_by(
+            league_id=league_id,
+            user_id=user_id
+        ).first()
+        
+        if action == 'unban' and blacklisted:
+            user = User.query.get(user_id)
+            db.session.delete(blacklisted)
+            db.session.commit()
+            flash(f'Utente {user.username} sbannato con successo! Può rientrare nella lega.', 'success')
+            
+            # AGGIUNTO: Reindirizza alla pagina della lega invece che alla blacklist
+            return redirect(url_for('league_detail', league_id=league_id))
+        
+        return redirect(url_for('manage_blacklist', league_id=league_id))
+    
+    blacklisted_users = db.session.query(BlacklistedMember, User).join(
+        User, BlacklistedMember.user_id == User.id
+    ).filter(BlacklistedMember.league_id == league_id).all()
+    
+    return render_template('blacklist.html', 
+                         league=league, 
+                         blacklisted_users=blacklisted_users)
 
 @app.route('/league/<league_code>/chat', methods=['GET'])
 def get_chat_messages(league_code):
@@ -661,6 +782,25 @@ def get_chat_messages(league_code):
         return jsonify({'error': 'Non autenticato'}), 401
     
     league = League.query.filter_by(code=league_code).first_or_404()
+    
+    # CONTROLLO BLACKLIST
+    is_blacklisted = BlacklistedMember.query.filter_by(
+        league_id=league.id,
+        user_id=session['user_id']
+    ).first()
+    
+    if is_blacklisted:
+        return jsonify({'error': 'Sei stato espulso da questa lega'}), 403
+    
+    # CONTROLLO MEMBERSHIP
+    is_member = LeagueMember.query.filter_by(
+        league_id=league.id,
+        user_id=session['user_id']
+    ).first()
+    
+    if not is_member:
+        return jsonify({'error': 'Non sei membro di questa lega'}), 403
+    
     messages = ChatMessage.query.filter_by(league_id=league.id)\
                                  .order_by(ChatMessage.created_at.asc())\
                                  .all()
@@ -687,7 +827,6 @@ def get_chat_messages(league_code):
     
     return jsonify(result)
 
-
 @app.route('/league/<league_code>/chat', methods=['POST'])
 def send_chat_message(league_code):
     """Invia un nuovo messaggio con eventuali allegati"""
@@ -695,6 +834,25 @@ def send_chat_message(league_code):
         return jsonify({'error': 'Non autenticato'}), 401
     
     league = League.query.filter_by(code=league_code).first_or_404()
+    
+    # CONTROLLO BLACKLIST
+    is_blacklisted = BlacklistedMember.query.filter_by(
+        league_id=league.id,
+        user_id=session['user_id']
+    ).first()
+    
+    if is_blacklisted:
+        return jsonify({'error': 'Sei stato espulso da questa lega e non puoi chattare'}), 403
+    
+    # CONTROLLO MEMBERSHIP
+    is_member = LeagueMember.query.filter_by(
+        league_id=league.id,
+        user_id=session['user_id']
+    ).first()
+    
+    if not is_member:
+        return jsonify({'error': 'Non sei membro di questa lega'}), 403
+    
     message_text = request.form.get('message', '').strip()
     
     # Validazione: almeno un messaggio o un file
@@ -776,8 +934,8 @@ def send_chat_message(league_code):
             if os.path.exists(filepath):
                 os.remove(filepath)
         return jsonify({'error': f'Errore nel database: {str(e)}'}), 500
-
-
+    
+    
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     """Serve i file caricati dagli utenti"""
@@ -993,7 +1151,7 @@ def league_chat(league_id):
         if not msg_text:
             return jsonify({"error": "Message empty"}), 400
 
-        msg = LeagueChatMessage(
+        msg = ChatMessage(
             league_id=league_id,
             user_id=session['user_id'],
             message=msg_text
@@ -1003,7 +1161,7 @@ def league_chat(league_id):
         return jsonify({"success": True, "message_id": msg.id})
 
     else:  
-        messages = LeagueChatMessage.query.filter_by(league_id=league_id).order_by(LeagueChatMessage.created_at.desc()).limit(50).all()
+        messages = ChatMessage.query.filter_by(league_id=league_id).order_by(ChatMessage.created_at.desc()).limit(50).all()
         return jsonify([{
             "id": m.id,
             "user": m.user.username,
@@ -1049,6 +1207,11 @@ def dashboard():
     if 'user_id' not in session:
         flash("Effettua prima il login", "warning")
         return redirect(url_for("login"))
+    
+    # Controlla se l'utente è stato espulso da una lega
+    if 'expelled_from' in session:
+        league_name = session.pop('expelled_from')
+        flash(f"Sei stato espulso dalla lega '{league_name}' dall'amministratore", "danger")
     
     user = User.query.get(session['user_id'])
     owned_leagues = League.query.filter_by(owner_id=user.id).all()
@@ -1133,13 +1296,23 @@ def create_league():
         db.session.add(league)
         db.session.commit()
         
+        # Aggiungi il creatore come membro automaticamente
+        creator_member = LeagueMember(
+            league_id=league.id,
+            user_id=session['user_id'],
+            avatar=session.get('avatar', 'default.png')
+        )
+        db.session.add(creator_member)
+        
         # Crea fattori di default
         setup_default_factors(league.id)
+        db.session.commit()
         
         flash(f"Lega '{name}' creata con successo! Codice: {league.code}", "success")
         return redirect(url_for("league_detail", league_id=league.id))
     
     return render_template("create_league.html")
+
 
 @app.route("/league/<int:league_id>")
 def league_detail(league_id):
@@ -1152,22 +1325,41 @@ def league_detail(league_id):
         flash("Lega non trovata", "danger")
         return redirect(url_for("dashboard"))
     
+    # CONTROLLO BLACKLIST
+    is_blacklisted = BlacklistedMember.query.filter_by(
+        league_id=league_id,
+        user_id=session['user_id']
+    ).first()
+    
+    if is_blacklisted:
+        flash(f"Sei stato espulso dalla lega '{league.name}' dall'amministratore", "danger")
+        return redirect(url_for("dashboard"))
+    
+    # CONTROLLO MEMBERSHIP
+    is_member = LeagueMember.query.filter_by(
+        league_id=league_id, 
+        user_id=session['user_id']
+    ).first()
+    
+    is_owner = (league.owner_id == session['user_id'])
+    
+    # Se non è membro e non è owner, reindirizza
+    if not is_member and not is_owner:
+        flash("Non sei membro di questa lega", "warning")
+        return redirect(url_for("dashboard"))
+    
     # Recupera membri ordinati per punteggio
     members = LeagueMember.query.filter_by(league_id=league_id).order_by(LeagueMember.total_score.desc()).all()
     
     # Recupera i fattori della lega
     factors = Factor.query.filter_by(league_id=league_id).all()
     
-    # Verifica se l'utente loggato è membro o proprietario
-    is_member = LeagueMember.query.filter_by(league_id=league_id, user_id=session['user_id']).first() is not None
-    is_owner = (league.owner_id == session['user_id'])
-    
     return render_template(
         "league_detail.html", 
         league=league, 
         members=members, 
         factors=factors, 
-        is_member=is_member, 
+        is_member=is_member is not None, 
         is_owner=is_owner
     )
 
@@ -1190,6 +1382,16 @@ def join_league():
         if not league:
             flash("Codice lega non valido", "danger")
             return redirect(url_for("join_league"))
+        
+        # Controlla se è nella blacklist
+        blacklisted = BlacklistedMember.query.filter_by(
+            league_id=league.id,
+            user_id=session['user_id']
+        ).first()
+        
+        if blacklisted:
+            flash("Sei stato rimosso da questa lega e non puoi rientrare", "danger")
+            return redirect(url_for("dashboard"))
         
         # Controlla se l'utente è già membro
         existing_member = LeagueMember.query.filter_by(
@@ -1216,7 +1418,6 @@ def join_league():
         member = LeagueMember(
             league_id=league.id,
             user_id=user.id,
-            name=user.username,
             avatar=user.avatar
         )
         db.session.add(member)
@@ -1228,6 +1429,8 @@ def join_league():
     # GET - mostra tutte le leghe disponibili
     leagues = League.query.filter_by(is_active=True).all()
     return render_template("join_league.html", leagues=leagues)
+
+
 
 # ============================================
 # ROUTES - Amministrazione Lega
@@ -1336,6 +1539,8 @@ def upload_avatar():
     else:
         flash("Formato file non valido. Usa PNG, JPG, JPEG, GIF o WEBP", "danger")
         return redirect(url_for("dashboard"))
+    
+
 @app.route("/league/<int:league_id>/vote", methods=["GET", "POST"])
 def vote(league_id):
     if 'user_id' not in session:
@@ -1345,6 +1550,26 @@ def vote(league_id):
     league = db.session.get(League, league_id)
     if not league:
         flash("Lega non trovata", "danger")
+        return redirect(url_for("dashboard"))
+    
+    # CONTROLLO BLACKLIST
+    is_blacklisted = BlacklistedMember.query.filter_by(
+        league_id=league_id,
+        user_id=session['user_id']
+    ).first()
+    
+    if is_blacklisted:
+        flash(f"Sei stato espulso dalla lega '{league.name}' e non puoi più votare", "danger")
+        return redirect(url_for("dashboard"))
+    
+    # CONTROLLO MEMBERSHIP
+    is_member = LeagueMember.query.filter_by(
+        league_id=league_id, 
+        user_id=session['user_id']
+    ).first()
+    
+    if not is_member:
+        flash("Non sei membro di questa lega", "warning")
         return redirect(url_for("dashboard"))
     
     members = LeagueMember.query.filter_by(league_id=league_id, is_competing=True).all()
@@ -1369,7 +1594,8 @@ def vote(league_id):
                         ).first()
                         
                         if existing_vote:
-                            existing_vote.score = float(score)
+                            # Non permettere di modificare un voto già fatto
+                            continue
                         else:
                             new_vote = FactorVote(
                                 factor_id=factor.id,
@@ -1388,11 +1614,20 @@ def vote(league_id):
         
         return redirect(url_for("league_detail", league_id=league_id))
 
+    # Carica i voti già fatti
+    existing_votes = FactorVote.query.filter_by(voter_id=session['user_id']).all()
+    voted_pairs = set((vote.member_id, vote.factor_id) for vote in existing_votes)
+    
     # Escludi l'utente loggato dalla visualizzazione
     filtered_members = [m for m in members if m.user_id != session['user_id']]
-    return render_template("vote.html", league=league, members=filtered_members, factors=factors)
     
-        
+    return render_template("vote.html", 
+                         league=league, 
+                         members=filtered_members, 
+                         factors=factors,
+                         voted_pairs=voted_pairs)
+
+
 @app.route("/privacy")
 def privacy_policy():
     return render_template("privacy_policy.html")

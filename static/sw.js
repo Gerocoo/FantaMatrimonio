@@ -1,6 +1,6 @@
-const CACHE_NAME = 'fanta-matrimonio-v2';  // Cambia versione per forzare l'update
+const CACHE_NAME = 'fanta-matrimonio-v4';  // Cambia versione per forzare l'update
 const STATIC_CACHE = [
-  '/static/fanta.css',
+  
   '/static/logo.png',
   '/static/default.png',
   '/static/google-icon.png',

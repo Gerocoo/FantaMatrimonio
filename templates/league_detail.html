@@ -1,44 +1,95 @@
 {% extends "base.html" %}
 {% block title %}{{ league.name }} - FantaMatrimonio{% endblock %}
 {% block content %}
+
 <script>
     const currentUser = "{{ session.get('username')|tojson }}";
 </script>
 
+<!-- INFO LEGA -->
 <section class="league-info card">
   <h2>{{ league.name }}</h2>
   <p>{{ league.description or 'Nessuna descrizione' }}</p>
   <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
   <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
+  
   <div class="actions" style="text-align:center; margin:2rem 0;">
     {% if is_member %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
       <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
+      <button onclick="toggleForm('leaveLeagueForm')" class="btn btn-secondary"> 
+        Lascia lega
+      </button>
     {% endif %}
+    
     {% if is_owner %}
       <button onclick="toggleForm('addFactorForm')" class="btn btn-secondary">Aggiungi Fattore</button>
-      <button onclick="confirmDelete()" class="btn btn-danger">Elimina Lega</button>
+      <button onclick="toggleForm('deleteMembersForm')" class="btn btn-primary">Elimina membri</button>
+      <button onclick="toggleForm('deleteLeagueForm')" class="btn btn-primary">Elimina Lega</button>
+      {% if is_owner %}
+  <a href="{{ url_for('manage_blacklist', league_id=league.id) }}" class="btn btn-secondary">Gestisci Blacklist</a>
+{% endif %}
     {% endif %}
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Torna alla Dashboard</a>
   </div>
   
   {% if is_owner %}
-  <form id="deleteLeagueForm" method="post" action="{{ url_for('delete_league', league_id=league.id) }}" style="display:none;">
+  <form id="deleteLeagueForm_hidden" method="post" action="{{ url_for('delete_league', league_id=league.id) }}" style="display:none;">
     <input type="hidden" name="confirm" value="1">
   </form>
   {% endif %}
+
+  <input type="hidden" id="leagueId" value="{{ league.id }}">
 </section>
 
+<!-- FORM LASCIA LEGA -->
+{% if is_member %}
+<section id="leaveLeagueForm" class="popup-form" style="display:none;">
+  <form class="login">
+    <h3>Conferma</h3>
+    <p>Sei sicuro di voler uscire dalla lega "<strong>{{ league.name }}</strong>"?</p>
+    <button type="button" class="btn btn-primary" onclick="confirmLeaveLeague('{{ league.id }}')">Sì, esci</button>
+    <button type="button" class="btn btn-secondary" onclick="toggleForm('leaveLeagueForm')">Annulla</button>
+  </form>
+</section>
+{% endif %}
+
+<!-- FORM ELIMINA MEMBRI -->
 {% if is_owner %}
-<section id="addMemberForm" class="popup-form" style="display:none;">
-  <form method="post" class="login" action="{{ url_for('add_member', league_id=league.id) }}">
-    <h3>Aggiungi Membro</h3>
-    <input type="text" name="name" placeholder="Nome del membro" required />
-    <input type="number" name="age" placeholder="Età (opzionale)" />
-    <button type="submit" class="btn btn-primary">Aggiungi</button>
-    <button type="button" class="btn btn-link" onclick="toggleForm('addMemberForm')">Annulla</button>
+<section id="deleteMembersForm" class="popup-form" style="display:none;">
+  <form class="login">
+    <h3>Seleziona un membro da eliminare</h3>
+    
+    <div id="membersButtonsList" class="members-buttons-list">
+      <!-- Generato da JavaScript -->
+    </div>
+    
+    <button type="button" class="btn btn-secondary" onclick="toggleForm('deleteMembersForm')">Annulla</button>
   </form>
 </section>
 
+<!-- Conferma eliminazione membro -->
+<div id="confirmDeleteModal" class="popup-form" style="display:none;">
+  <form class="login">
+    <h3>Conferma eliminazione</h3>
+    <p>Sei sicuro di voler eliminare <strong id="memberNameToDelete"></strong>?</p>
+    <button type="button" class="btn btn-primary" onclick="confirmSingleDelete()">Sì, elimina</button>
+    <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Annulla</button>
+  </form>
+</div>
+
+<!-- FORM ELIMINA LEGA -->
+<section id="deleteLeagueForm" class="popup-form" style="display:none;">
+  <form class="login">
+    <h3>Elimina Lega</h3>
+    <p>Sei sicuro di voler eliminare questa lega "<strong>{{ league.name }}</strong>"? L'azione è <strong>irreversibile</strong>!</p>
+    <button type="button" class="btn btn-primary" onclick="confirmDeleteLeague()">Sì, elimina</button>
+    <button type="button" class="btn btn-secondary" onclick="toggleForm('deleteLeagueForm')">Annulla</button>
+  </form>
+</section>
+{% endif %}
+
+<!-- FORM AGGIUNGI FATTORE -->
+{% if is_owner %}
 <section id="addFactorForm" class="popup-form" style="display:none;">
   <form method="post" class="login" action="{{ url_for('add_factor', league_id=league.id) }}">
     <h3>Aggiungi Fattore</h3>
@@ -46,12 +97,12 @@
     <textarea name="description" placeholder="Descrizione"></textarea>
     <input type="number" step="0.1" name="weight" placeholder="Peso (es. 1.0)" value="1.0" />
     <button type="submit" class="btn btn-primary">Aggiungi</button>
-    <button type="button" class="btn btn-link" onclick="toggleForm('addFactorForm')">Annulla</button>
+    <button type="button" class="btn btn-secondary" onclick="toggleForm('addFactorForm')">Annulla</button>
   </form>
 </section>
 {% endif %}
 
-<!-- CHAT CONTAINER (UNA SOLA VOLTA!) -->
+<!-- CHAT CONTAINER -->
 <div id="chat-container">
   <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
     💬
@@ -78,7 +129,6 @@
     
     <form id="chat-form" class="chat-input-form" autocomplete="off">
       <div class="chat-input-wrapper">
-        <!-- Pulsante allega file -->
         <button type="button" class="attach-btn" title="Allega file">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -91,9 +141,6 @@
           placeholder="Scrivi un messaggio..." 
           rows="1"></textarea>
         
-        
-        
-        
         <button type="submit" id="send-btn" class="send-btn" title="Invia">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
@@ -101,12 +148,55 @@
         </button>
       </div>
       
-      <!-- Preview file allegati -->
       <div id="file-preview" class="file-preview"></div>
     </form>
   </div>
 </div>
-<!-- FINE CHAT CONTAINER -->
+
+<!-- CLASSIFICA E FATTORI -->
+<main>
+  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">Classifica Membri</h2>
+  {% if members %}
+    <div class="ranking-cards-container">
+      {% for member in members %}
+      <div class="ranking-card" data-member-id="{{ member.id }}" data-member-name="{{ member.name }}">
+        <div class="ranking-position">
+          {% if loop.index == 1 %}
+            🥇
+          {% elif loop.index == 2 %}
+            🥈
+          {% elif loop.index == 3 %}
+            🥉
+          {% else %}
+            {{ loop.index }}
+          {% endif %}
+        </div>
+        <div class="ranking-info">
+          <h3>{{ member.name }}</h3>
+          <p class="ranking-score">{{ "%.2f"|format(member.total_score) }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="no-data">Nessun membro ancora</p>
+  {% endif %}
+
+  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
+  {% if factors %}
+    <div class="factors-cards-container">
+      {% for factor in factors %}
+      <div class="factor-card">
+        <h3>{{ factor.name }}</h3>
+        <p class="factor-description">{{ factor.description or 'Nessuna descrizione' }}</p>
+        <p class="factor-weight"><strong>Peso:</strong> {{ factor.weight }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="no-data">Nessun fattore definito</p>
+  {% endif %}
+</main>
 
 <script>
 const leagueId = "{{ league.code }}";
@@ -124,29 +214,20 @@ const filePreview = document.getElementById("file-preview");
 let lastSeenMessageId = null;
 let unreadCount = 0;
 let selectedFiles = [];
-let audioChunks = [];
+let selectedMemberId = null;
 
-
-// Funzione per aggiornare visibilità pulsanti
+// ===== CHAT FUNZIONI =====
 function updateButtonsVisibility() {
   const hasText = chatInput.value.trim() !== '';
-  
-  // Mostra "Invia" se c'è testo O file allegati
-  if (hasText) {
-    sendBtn.disabled = false;
-  } else {
-    sendBtn.disabled = true;
-  }
+  sendBtn.disabled = !hasText;
 }
 
-// Auto-resize della textarea
 chatInput.addEventListener('input', function() {
   this.style.height = 'auto';
   this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   updateButtonsVisibility();
 });
 
-// Enter per inviare, Shift+Enter per nuova riga
 chatInput.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -154,18 +235,11 @@ chatInput.addEventListener('keydown', function(e) {
   }
 });
 
-// Click sul pulsante invia
 sendBtn.addEventListener('click', function(e) {
   e.preventDefault();
   e.stopPropagation();
   sendMessage();
 });
-
-
-
-
-
-
 
 function updateBadge() {
   if (unreadCount > 0) {
@@ -174,11 +248,6 @@ function updateBadge() {
   } else {
     chatBadge.style.display = "none";
   }
-}
-
-function toggleForm(formId) {
-  const form = document.getElementById(formId);
-  form.style.display = form.style.display === 'block' ? 'none' : 'block';
 }
 
 function closeChat() { 
@@ -190,8 +259,6 @@ function getUserColor(username) {
   for (let i = 0; i < username.length; i++) {
     hash = username.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
-  // Genera colori saturi e luminosi
   const hue = Math.abs(hash % 360);
   return `hsl(${hue}, 70%, 45%)`;
 }
@@ -203,7 +270,6 @@ function loadMessages() {
       chatMessages.innerHTML = '';
       messages.forEach(m => {
         const userColor = getUserColor(m.user);
-        
         let content = `<strong style="color: ${userColor};">${m.user}</strong>: <span style="color: #222;">${m.message}</span>`;
         
         if (m.attachments && m.attachments.length > 0) {
@@ -235,24 +301,6 @@ function loadMessages() {
     });
 }
 
-function checkNewMessages() {
-  fetch(`/league/${leagueId}/chat`)
-    .then(res => res.json())
-    .then(messages => {
-      if(messages.length === 0) return;
-      if(lastSeenMessageId === null) {
-        lastSeenMessageId = messages[messages.length - 1].id;
-        return;
-      }
-      const newMessages = messages.filter(m => m.id > lastSeenMessageId);
-      if(newMessages.length > 0) {
-        unreadCount += newMessages.length;
-        updateBadge();
-        lastSeenMessageId = messages[messages.length - 1].id;
-      }
-    });
-}
-
 function sendMessage() {
   const msg = chatInput.value.trim();
   if(!msg && selectedFiles.length === 0) return;
@@ -274,12 +322,30 @@ function sendMessage() {
     chatInput.style.height = 'auto';
     selectedFiles = [];
     fileInput.value = '';
-    updateButtonsVisibility(); // ← AGGIUNTO: Reset pulsanti dopo invio
+    updateButtonsVisibility();
     loadMessages();
   })
   .catch(error => {
     alert('Errore nell\'invio: ' + error.message);
   });
+}
+
+function checkNewMessages() {
+  fetch(`/league/${leagueId}/chat`)
+    .then(res => res.json())
+    .then(messages => {
+      if(messages.length === 0) return;
+      if(lastSeenMessageId === null) {
+        lastSeenMessageId = messages[messages.length - 1].id;
+        return;
+      }
+      const newMessages = messages.filter(m => m.id > lastSeenMessageId);
+      if(newMessages.length > 0) {
+        unreadCount += newMessages.length;
+        updateBadge();
+        lastSeenMessageId = messages[messages.length - 1].id;
+      }
+    });
 }
 
 chatBtn.onclick = () => {
@@ -309,57 +375,137 @@ fetch(`/league/${leagueId}/chat`)
     }
   });
 
-function confirmDelete() {
-  if(confirm("Sei sicuro di voler eliminare questa lega? L'azione è irreversibile!")) {
-    document.getElementById("deleteLeagueForm").submit();
-  }
+updateButtonsVisibility();
+
+// ===== FORM FUNZIONI =====
+function generateMemberButtons() {
+  const memberElements = document.querySelectorAll('[data-member-id]');
+  const membersList = document.getElementById('membersButtonsList');
+  
+  membersList.innerHTML = '';
+  
+  memberElements.forEach(el => {
+    const memberId = el.getAttribute('data-member-id');
+    const memberName = el.getAttribute('data-member-name');
+    
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'member-button';
+    button.textContent = memberName;
+    button.onclick = () => openConfirmDelete(memberId, memberName);
+    
+    membersList.appendChild(button);
+  });
 }
 
-// Inizializza stato pulsanti all'avvio
-updateButtonsVisibility();
+function toggleForm(formId) {
+  const form = document.getElementById(formId);
+  if (formId === 'deleteMembersForm') {
+    generateMemberButtons();
+  }
+  form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+}
+
+function confirmLeaveLeague(leagueId) {
+  fetch(`/league/${leagueId}/leave`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(() => {
+    window.location.href = '/';
+  });
+}
+
+function openConfirmDelete(memberId, memberName) {
+  selectedMemberId = memberId;
+  document.getElementById('memberNameToDelete').textContent = memberName;
+  document.getElementById('confirmDeleteModal').style.display = 'block';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmDeleteModal').style.display = 'none';
+  selectedMemberId = null;
+}
+
+function confirmSingleDelete() {
+  if (!selectedMemberId) return;
+  
+  const leagueId = document.getElementById('leagueId').value;
+  const currentUserId = {{ session.get('user_id') }};
+  
+  fetch(`/league/${leagueId}/delete_members`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ member_ids: [selectedMemberId] })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      if (data.eliminated_users.includes(currentUserId)) {
+        window.location.href = '/dashboard';
+      } else {
+        location.reload();
+      }
+    } else {
+      alert('Errore: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Fetch error:', error);
+    alert('Errore nella richiesta: ' + error.message);
+  });
+  
+  closeConfirmModal(); // <-- AGGIUNGI QUESTA RIGA
+} // <-- QUESTA PARENTESI MANCAVA!
+
+function confirmDeleteLeague() {
+  document.getElementById("deleteLeagueForm_hidden").submit();
+}
+
+function generateMemberButtons() {
+  const memberElements = document.querySelectorAll('[data-member-id]');
+  const membersList = document.getElementById('membersButtonsList');
+  
+  membersList.innerHTML = '';
+  
+  memberElements.forEach(el => {
+    const memberId = el.getAttribute('data-member-id');
+    const memberName = el.getAttribute('data-member-name');
+    
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'member-button';
+    button.textContent = memberName;
+    button.onclick = () => openConfirmDelete(memberId, memberName);
+    
+    membersList.appendChild(button);
+  });
+}
+
+function openConfirmDelete(memberId, memberName) {
+  selectedMemberId = memberId;
+  document.getElementById('memberNameToDelete').textContent = memberName;
+  document.getElementById('confirmDeleteModal').style.display = 'block';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmDeleteModal').style.display = 'none';
+  selectedMemberId = null;
+}
+
+
+
+
+
+function confirmDeleteLeague() {
+  document.getElementById("deleteLeagueForm_hidden").submit();
+}
+
 </script>
 
-
-<main>
-  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">Classifica Membri</h2>
-  {% if members %}
-    <div class="ranking-cards-container">
-      {% for member in members %}
-      <div class="ranking-card"><div class="ranking-position">
-  {% if loop.index == 1 %}
-    🥇
-  {% elif loop.index == 2 %}
-    🥈
-  {% elif loop.index == 3 %}
-    🥉
-  {% else %}
-    {{ loop.index }}
-  {% endif %}
-</div>
-        <div class="ranking-info">
-          <h3>{{ member.name }}</h3>
-          <p class="ranking-score">{{ "%.2f"|format(member.total_score) }}</p>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="no-data">Nessun membro ancora</p>
-  {% endif %}
-
-  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
-  {% if factors %}
-    <div class="factors-cards-container">
-      {% for factor in factors %}
-      <div class="factor-card">
-        <h3>{{ factor.name }}</h3>
-        <p class="factor-description">{{ factor.description or 'Nessuna descrizione' }}</p>
-        <p class="factor-weight"><strong>Peso:</strong> {{ factor.weight }}</p>
-      </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="no-data">Nessun fattore definito</p>
-  {% endif %}
-</main>
 {% endblock %}

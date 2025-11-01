@@ -101,5 +101,19 @@
   </div>
   {% endif %}
 </main>
+<script>
+  // Controlla se c'è un messaggio di espulsione
+  const kickedMessage = sessionStorage.getItem('kicked_message');
+  if (kickedMessage) {
+    // Mostra il flash message
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger';
+    alertDiv.textContent = kickedMessage;
+    document.body.insertBefore(alertDiv, document.body.firstChild);
+    
+    // Pulisci sessionStorage
+    sessionStorage.removeItem('kicked_message');
+  }
+</script>
 
 {% endblock %}
