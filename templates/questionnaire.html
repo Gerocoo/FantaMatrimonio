@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}Conosciamoci! - FantaMatrimonio{% endblock %}
+{% block content %}
+
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+  <div class="card">
+    <h1 style="font-family: 'Dancing Script', cursive; text-align: center; color: var(--primary); margin-bottom: 1rem;">
+      Conosciamoci!
+    </h1>
+    <p style="text-align: center; color: #666; margin-bottom: 2rem;">
+      Prima di iniziare a giocare, vogliamo conoscerti meglio! Rispondi sinceramente a queste domande per calcolare il tuo punteggio base.
+    </p>
+    
+    <div style="background: #f0f0f0; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+      <p style="margin: 0; font-size: 0.9rem; color: #555;">
+        🔒 <strong>Privacy:</strong> Nessun dato sarà divulgato o condiviso con altri utenti. Queste informazioni servono solo a calcolare il tuo punteggio di propensione al matrimonio.
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('questionnaire') }}">
+      
+      <!-- 1-11: Altri campi rimangono uguali -->
+      
+      <!-- 1. SESSO -->
+      <div class="form-group">
+        <label for="gender">1. Genere</label>
+        <select id="gender" name="gender" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Maschio">Maschio</option>
+          <option value="Femmina">Femmina</option>
+          <option value="Altro">Preferisco non dirlo</option>
+        </select>
+      </div>
+
+      <!-- 2. ETA' -->
+      <div class="form-group">
+        <label for="age">2. Quanti anni hai?</label>
+        <input type="number" name="age" id="age" min="18" max="99" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+
+      <!-- 3. IMPIEGO -->
+      <div class="form-group">
+        <label for="employment_status">3. Qual è la tua situazione lavorativa?</label>
+        <select name="employment_status" id="employment_status" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Impiegato">Impiegato/a</option>
+          <option value="Libero professionista">Libero professionista</option>
+          <option value="Imprenditore">Imprenditore/Imprenditrice</option>
+          <option value="Studente">Studente</option>
+          <option value="Disoccupato">Disoccupato/a</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </div>
+
+      <!-- 4. RELAZIONE PIU' LUNGA -->
+      <div class="form-group">
+        <label for="longest_relationship">4. Quanto è durata la tua relazione più lunga? (in mesi)</label>
+        <input type="number" name="longest_relationship" id="longest_relationship" min="0" max="600" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+        <small style="color: #999; display: block; margin-top: 0.5rem;">Se non hai mai avuto una relazione, inserisci 0</small>
+      </div>
+
+      <!-- 5. NUMERO DI RELAZIONI -->
+      <div class="form-group">
+        <label for="num_relationships">5. Quante relazioni serie hai avuto nella tua vita?</label>
+        <input type="number" name="num_relationships" id="num_relationships" min="0" max="50" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+
+      <!-- 6. STATO ATTUALE -->
+      <div class="form-group">
+        <label for="current_status">6. Qual è il tuo stato sentimentale attuale?</label>
+        <select name="current_status" id="current_status" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Single">Single</option>
+          <option value="Fidanzato/a">Fidanzato/a</option>
+          <option value="Convivente">Convivente</option>
+          <option value="Sposato/a">Sposato/a</option>
+          <option value="Divorziato/a">Divorziato/a</option>
+          <option value="Complicato">È complicato</option>
+        </select>
+      </div>
+
+      <!-- 7. HA MAI TRADITO -->
+      <div class="form-group">
+        <label>7. Hai mai tradito in una relazione passata?</label>
+        <select name="has_cheated" id="has_cheated" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Sì">Sì</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      <!-- 8. TRADIRESTI -->
+      <div class="form-group">
+        <label for="would_cheat">8. Tradiresti il/la tuo/a partner?</label>
+        <select name="would_cheat" id="would_cheat" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Mai">Mai</option>
+          <option value="Forse">Forse</option>
+          <option value="Dipende">Dipende dalle circostanze</option>
+        </select>
+      </div>
+
+      <!-- 9. IDEA MATRIMONIO -->
+      <div class="form-group">
+        <label for="marriage_idea">9. Cosa pensi del matrimonio?</label>
+        <select name="marriage_idea" id="marriage_idea" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Sogno">È il mio sogno</option>
+          <option value="Probabile">Probabilmente sì</option>
+          <option value="Forse">Forse, non so ancora</option>
+          <option value="No">No, non mi interessa</option>
+        </select>
+      </div>
+
+      <!-- 10. VUOI FIGLI -->
+      <div class="form-group">
+        <label for="wants_children">10. Quanti figli vorresti avere?</label>
+        <select name="wants_children" id="wants_children" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="0">Nessuno</option>
+          <option value="1">1 figlio</option>
+          <option value="2">2 figli</option>
+          <option value="3">3 figli</option>
+          <option value="4">4 figli</option>
+          <option value="5">5 o più figli</option>
+        </select>
+      </div>
+
+      <!-- 11. CONVIVENZA -->
+      <div class="form-group">
+        <label for="living_together">11. Sei favorevole alla convivenza prima del matrimonio?</label>
+        <select name="living_together" id="living_together" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
+          <option value="">-- Seleziona --</option>
+          <option value="Sì">Sì, assolutamente</option>
+          <option value="Non ancora">Non ancora, ma in futuro</option>
+          <option value="No">No, preferisco aspettare il matrimonio</option>
+        </select>
+      </div>
+
+      <!-- 12. LIVELLO DI IMPEGNO - SLIDER ROSA CORRETTO -->
+      <div class="form-group">
+        <label for="commitment_level">12. Quanto sei pronto/a per un impegno serio?</label>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+          <input 
+            type="range" 
+            id="commitment_level" 
+            name="commitment_level" 
+            min="1" 
+            max="10" 
+            value="1"
+            class="pink-slider"
+            oninput="updateCommitmentValue(this.value)"
+          />
+          <span id="commitment_value" style="font-weight: 700;color: #FF69B4;font-size: 1.2rem;min-width: 45px;text-align: center;padding-bottom: 25px;">1/10</span>
+        </div>
+      </div>
+
+      <!-- BOTTONE SUBMIT -->
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem; padding: 1rem; font-size: 1.1rem;">
+         Completa Questionario 
+      </button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+  }
+
+  /* SLIDER ROSA - Stile Principale */
+  .pink-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #FFB6D9 0%, #FF1493 100%);
+    outline: none;
+    cursor: pointer;
+    border: none;
+  }
+
+  /* Chrome, Safari, Edge - Thumb (pallino) */
+  .pink-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #FF1493;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(255, 20, 147, 0.4);
+    transition: all 0.2s ease;
+  }
+
+  .pink-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 12px rgba(255, 20, 147, 0.6);
+  }
+
+  .pink-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+  }
+
+  /* Firefox - Thumb */
+  .pink-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #FF1493;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(255, 20, 147, 0.4);
+    transition: all 0.2s ease;
+  }
+
+  .pink-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 12px rgba(255, 20, 147, 0.6);
+  }
+
+  /* Firefox - Track */
+  .pink-slider::-moz-range-track {
+    background: linear-gradient(to right, #FFB6D9 0%, #FF1493 100%);
+    border-radius: 5px;
+    height: 8px;
+    border: none;
+  }
+
+  /* IE/Edge - Track */
+  .pink-slider::-ms-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+  }
+
+  .pink-slider::-ms-fill-lower {
+    background: #FFB6D9;
+    border-radius: 5px;
+  }
+
+  .pink-slider::-ms-fill-upper {
+    background: #FF1493;
+    border-radius: 5px;
+  }
+
+  .pink-slider::-ms-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #FF1493;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(255, 20, 147, 0.4);
+  }
+</style>
+
+<script>
+  function updateCommitmentValue(value) {
+    document.getElementById('commitment_value').textContent = value + '/10';
+  }
+</script>
+
+{% endblock %}

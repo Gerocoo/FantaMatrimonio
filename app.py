@@ -7,6 +7,7 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import secrets
+import random
 from PIL import Image, ImageDraw
 default_dir = os.path.join('static')
 default_path = os.path.join(default_dir, 'default.png')
@@ -66,13 +67,39 @@ class User(db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     email_token = db.Column(db.String(128))
     owned_leagues = db.relationship('League', backref='owner', lazy=True, foreign_keys='League.owner_id')
-    
-    # CAMBIA QUESTA RIGA:
-    memberships = db.relationship('LeagueMember', back_populates='user', lazy=True)  # back_populates, non backref!
-    
+    memberships = db.relationship('LeagueMember', back_populates='user', lazy=True)
     votes = db.relationship('FactorVote', backref='voter', lazy=True)
     reset_token = db.Column(db.String(100), unique=True)
     reset_token_expiry = db.Column(db.DateTime)
+    
+    # NUOVO: Questionario e Propensione al Matrimonio
+    questionnaire_completed = db.Column(db.Boolean, default=False)
+    marriage_score = db.Column(db.Integer, default=0)
+    
+    # Dati personali
+    age = db.Column(db.Integer)
+    employment_status = db.Column(db.String(100))
+    longest_relationship = db.Column(db.Integer)  # In mesi
+    num_relationships = db.Column(db.Integer)
+    current_status = db.Column(db.String(50))
+    has_cheated = db.Column(db.Boolean)
+    would_cheat = db.Column(db.String(50))
+    marriage_idea = db.Column(db.Text)
+    wants_children = db.Column(db.Integer)
+    living_together = db.Column(db.String(50))
+    commitment_level = db.Column(db.Integer)
+    
+    # ===== METODI =====
+    def set_password(self, password):
+        """Imposta la password con hash"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Verifica se la password corrisponde"""
+        return check_password_hash(self.password_hash, password)
+    
+    def __repr__(self):
+        return f'<User {self.username}>'
 
 
 class ChatMessage(db.Model):
@@ -157,14 +184,76 @@ class LeagueMember(db.Model):
     total_score = db.Column(db.Float, default=0.0)
     is_banned = db.Column(db.Boolean, default=False)
     
-    # CAMBIA QUESTA RIGA:
-    user = db.relationship('User', back_populates='memberships')  # back_populates, non backref!
-    
+    # Relationship
+    user = db.relationship('User', back_populates='memberships')
     votes_received = db.relationship('FactorVote', backref='member', lazy=True)
     
-    @hybrid_property
+    @property
     def name(self):
+        """Restituisce il nome del membro"""
         return self.user.username if self.user else "Unknown"
+    
+    @property
+    def base_score(self):
+        """Restituisce il marriage_score dell'utente (base di partenza)"""
+        return self.user.marriage_score if self.user else 0
+    
+    @property
+    def votes_sum(self):
+        """Somma tutti i voti ricevuti dai fattori"""
+        return sum([v.score for v in self.votes_received]) if self.votes_received else 0
+    
+    @property
+    def num_voters(self):
+        """Conta quanti utenti hanno votato per questo membro"""
+        if not self.votes_received:
+            return 0
+        unique_voters = set(v.voter_id for v in self.votes_received)
+        return len(unique_voters)
+    
+    @property
+    def calculated_total_score(self):
+        """Calcola il punteggio totale: base_score + SOMMA dei voti ricevuti"""
+        base = self.base_score
+        if not self.votes_received:
+            return base
+        votes_sum = sum([v.score for v in self.votes_received])
+        total = base + votes_sum
+        return max(0, int(total))
+    
+    @property
+    def user_color(self):
+        """Restituisce il colore assegnato a questo utente per le chat"""
+        colors = [
+            '#FFD700',  # Oro
+            '#C0C0C0',  # Argento
+            '#CD7F32',  # Bronzo
+            '#FF6B9D',  # Rosa
+            '#A569BD',  # Viola
+            '#5DADE2',  # Azzurro
+            '#52BE80',  # Verde
+            '#F8B88B',  # Arancione
+        ]
+        return colors[self.user_id % len(colors)]
+    
+    def get_voting_breakdown(self):
+        """Restituisce il dettaglio dei voti ricevuti per ogni fattore"""
+        breakdown = {}
+        for vote in self.votes_received:
+            if vote.factor_id not in breakdown:
+                breakdown[vote.factor_id] = {
+                    'factor_name': vote.factor.name if vote.factor else 'Unknown',
+                    'votes': [],
+                    'average': 0
+                }
+            breakdown[vote.factor_id]['votes'].append(vote.score)
+        
+        for factor_id, data in breakdown.items():
+            if data['votes']:
+                data['average'] = sum(data['votes']) / len(data['votes'])
+        
+        return breakdown
+
 
 
 class Factor(db.Model):
@@ -561,6 +650,149 @@ def home():
     print("=" * 50)
     
     return render_template("index.html", leagues=leagues, search_query=search_query)
+
+@app.route('/questionnaire', methods=['GET', 'POST'])
+def questionnaire():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    
+    if user.questionnaire_completed:
+        return redirect(url_for('dashboard'))
+    
+    if request.method == "POST":
+        try:
+            # RACCOGLI TUTTI I DATI DAL FORM
+            gender = request.form.get('gender', 'Altro')
+            age = request.form.get('age', 18)
+            employment_status = request.form.get('employment_status', '')
+            longest_relationship = request.form.get('longest_relationship', 0)
+            num_relationships = request.form.get('num_relationships', 0)
+            current_status = request.form.get('current_status', '')
+            has_cheated = request.form.get('has_cheated') == 'yes'
+            would_cheat = request.form.get('would_cheat', '')
+            marriage_idea = request.form.get('marriage_idea', '')
+            wants_children = request.form.get('wants_children', 0)
+            living_together = request.form.get('living_together', '')
+            commitment_level = request.form.get('commitment_level', 5)
+            
+            # CONVERTI A NUMERI
+            age = int(age) if age else 18
+            longest_relationship = int(longest_relationship) if longest_relationship else 0
+            num_relationships = int(num_relationships) if num_relationships else 0
+            wants_children = int(wants_children) if wants_children else 0
+            commitment_level = int(commitment_level) if commitment_level else 5
+            
+            # CALCOLA IL PUNTEGGIO
+            score = 0
+            
+            # Sesso (bonus per stabilità)
+            if gender == 'Maschio':
+                score += 5
+            elif gender == 'Femmina':
+                score += 5
+            
+            # Età (25-35 anni = +30, <22 o >40 = +10)
+            if 25 <= age <= 35:
+                score += 30
+            elif 22 <= age < 25 or 35 < age <= 40:
+                score += 20
+            else:
+                score += 10
+            
+            # Impiego stabile = +25
+            if employment_status in ['Impiegato', 'Libero professionista', 'Imprenditore']:
+                score += 25
+            elif employment_status in ['Studente', 'Disoccupato']:
+                score += 5
+            
+            # Relazione più lunga (+2 punti per ogni mese fino a max +50)
+            score += min(longest_relationship * 2, 50)
+            
+            # Numero di relazioni (2-5 = +20, 1 = +10, >5 = +5)
+            if 2 <= num_relationships <= 5:
+                score += 20
+            elif num_relationships == 1:
+                score += 10
+            else:
+                score += 5
+            
+            # Stato attuale
+            if current_status == 'Fidanzato/a':
+                score += 40
+            elif current_status == 'Convivente':
+                score += 50
+            elif current_status == 'Single':
+                score += 10
+            elif current_status == 'Sposato/a':
+                score += 100
+            
+            # Ha mai tradito? (-30 se sì)
+            if has_cheated:
+                score -= 30
+            else:
+                score += 20
+            
+            # Tradiresti?
+            if would_cheat == 'Mai':
+                score += 30
+            elif would_cheat == 'Forse':
+                score -= 10
+            elif would_cheat == 'Dipende':
+                score -= 20
+            
+            # Vuoi figli? (+10 per ogni figlio)
+            if wants_children == 0:
+                score -= 20
+            elif wants_children == 1:
+                score += 10
+            elif wants_children == 2:
+                score += 30
+            elif wants_children >= 3:
+                score += 50
+            
+            # Convivenza
+            if living_together == 'Sì':
+                score += 40
+            elif living_together == 'Non ancora':
+                score += 20
+            else:
+                score -= 10
+            
+            # Livello di impegno (commitment_level da 1 a 10)
+            score += commitment_level * 5
+            
+            # SALVA NEL DATABASE
+            user.gender = gender
+            user.age = age
+            user.employment_status = employment_status
+            user.longest_relationship = longest_relationship
+            user.num_relationships = num_relationships
+            user.current_status = current_status
+            user.has_cheated = has_cheated
+            user.would_cheat = would_cheat
+            user.marriage_idea = marriage_idea
+            user.wants_children = wants_children
+            user.living_together = living_together
+            user.commitment_level = commitment_level
+            user.marriage_score = max(0, score)
+            user.questionnaire_completed = True
+            
+            db.session.commit()
+            
+            flash(f"Grazie per aver completato il questionario! Il tuo punteggio di propensione al matrimonio è: {score}", "success")
+            return redirect(url_for('dashboard'))
+        
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Errore: {str(e)}", "danger")
+            return redirect(url_for('questionnaire'))
+    
+    return render_template('questionnaire.html')
+
+
+
 @app.route("/rules")
 def rules():
     return render_template("rules.html")
@@ -1208,12 +1440,17 @@ def dashboard():
         flash("Effettua prima il login", "warning")
         return redirect(url_for("login"))
     
+    user = User.query.get(session['user_id'])
+    
+    # BLOCCO: Se non ha completato il questionario, reindirizza
+    if not user.questionnaire_completed:
+        return redirect(url_for("questionnaire"))
+    
     # Controlla se l'utente è stato espulso da una lega
     if 'expelled_from' in session:
         league_name = session.pop('expelled_from')
         flash(f"Sei stato espulso dalla lega '{league_name}' dall'amministratore", "danger")
     
-    user = User.query.get(session['user_id'])
     owned_leagues = League.query.filter_by(owner_id=user.id).all()
     
     # Leghe a cui l'utente partecipa
@@ -1223,7 +1460,8 @@ def dashboard():
     return render_template("dashboard.html", 
                          user=user, 
                          owned_leagues=owned_leagues,
-                         joined_leagues=joined_leagues)
+                         joined_leagues=joined_leagues,
+                         marriage_score=user.marriage_score)
 
 @app.route("/profilo", methods=["GET", "POST"])
 def profilo():
@@ -1314,7 +1552,7 @@ def create_league():
     return render_template("create_league.html")
 
 
-@app.route("/league/<int:league_id>")
+@app.route("/league/<int:league_id>", methods=['GET'])
 def league_detail(league_id):
     if 'user_id' not in session:
         flash("Effettua prima il login", "warning")
@@ -1348,8 +1586,13 @@ def league_detail(league_id):
         flash("Non sei membro di questa lega", "warning")
         return redirect(url_for("dashboard"))
     
-    # Recupera membri ordinati per punteggio
-    members = LeagueMember.query.filter_by(league_id=league_id).order_by(LeagueMember.total_score.desc()).all()
+    # Recupera membri e ORDINA per punteggio calcolato
+    members = LeagueMember.query.filter_by(league_id=league_id).all()
+    members_sorted = sorted(
+        members,
+        key=lambda m: m.calculated_total_score,
+        reverse=True
+    )
     
     # Recupera i fattori della lega
     factors = Factor.query.filter_by(league_id=league_id).all()
@@ -1357,11 +1600,12 @@ def league_detail(league_id):
     return render_template(
         "league_detail.html", 
         league=league, 
-        members=members, 
+        members=members_sorted,
         factors=factors, 
         is_member=is_member is not None, 
         is_owner=is_owner
     )
+
 
 @app.route('/league/<int:league_id>/stats')
 def league_stats(league_id):
@@ -1371,33 +1615,133 @@ def league_stats(league_id):
     league = League.query.get_or_404(league_id)
     members = LeagueMember.query.filter_by(league_id=league_id).all()
     
+    # ORDINA PER PUNTEGGIO TOTALE
+    members_sorted = sorted(
+        members,
+        key=lambda m: m.calculated_total_score,
+        reverse=True
+    )
+    
+    # CALCOLA STATISTICHE
+    scores = [m.calculated_total_score for m in members_sorted]
     stats = {
         'totale_voti': len(members),
-        'membro_piu_votato': max(members, key=lambda m: m.total_score).name if members else "Nessuno",
-        'membro_meno_votato': min(members, key=lambda m: m.total_score).name if members else "Nessuno",
-        'voto_medio': round(sum([m.total_score for m in members]) / len(members), 2) if members else 0,
-        'disparita': round(max([m.total_score for m in members]) - min([m.total_score for m in members]), 2) if members else 0,
+        'membro_piu_votato': members_sorted[0].name if members_sorted else "Nessuno",
+        'membro_meno_votato': members_sorted[-1].name if members_sorted else "Nessuno",
+        'voto_medio': round(sum(scores) / len(scores), 2) if scores else 0,
+        'disparita': round(max(scores) - min(scores), 2) if scores else 0,
     }
     
-    # Frasi goliardiche e sessualmente allusive
-    funny_phrases = [
-        f"⛓️‍💥 {stats['membro_piu_votato']}  presto in galera ",
-        f"🤏 {stats['membro_meno_votato']} si vede che ce l'ha piccolo... almeno secondo i voti ricevuti!",
-        f"📏 Disparità di {stats['disparita']} - Come la differenza tra chi sa usarlo e chi no!",
-        f"💪 {stats['membro_piu_votato']} Ha i coglioni quadrati..e le tasche vuote",
-        f"💦 {stats['membro_meno_votato']} spargerà seme per il mondo...",
-        f"🍌 {stats['membro_piu_votato']} conquista tutti con quel che si vede nei pantaloni!",
-        f"😂 Voto medio {stats['voto_medio']} - Non è male per chi non sa neanche come funziona!",
-    ]
+    # FRASI DIVERTENTI DIFFERENZIATE PER SESSO
+    funny_phrases = []
     
-    import random
+    if members_sorted:
+        primo = members_sorted[0]
+        ultimo = members_sorted[-1]
+        primo_user = User.query.get(primo.user_id)
+        ultimo_user = User.query.get(ultimo.user_id)
+        
+        gender_primo = primo_user.gender if primo_user else "Altro"
+        gender_ultimo = ultimo_user.gender if ultimo_user else "Altro"
+        
+        # FRASI PER IL PRIMO
+        if gender_primo == "Femmina":
+            funny_phrases.extend([
+                f"👑 {primo.name} ha la corona! La signora perfetta! 💍",
+                f"💄 {primo.name} sarà la prima all'altare... prepara l'abito! 👰",
+            ])
+        elif gender_primo == "Maschio":
+            funny_phrases.extend([
+                f"🤵 {primo.name} è il prescelto! Prepara lo smoking! 💍",
+                f"💪 {primo.name} ha i coglioni quadrati...e le tasche vuote",
+            ])
+        else:
+            funny_phrases.extend([
+                f"👑 {primo.name} è il vincitore assoluto! 🏆",
+                f"⛓️‍💥 {primo.name} presto in galera",
+            ])
+        
+        # FRASI PER L'ULTIMO
+        if gender_ultimo == "Femmina":
+            funny_phrases.extend([
+                f"💀 {ultimo.name} spargerà seme per il mondo... con calma! 🌍",
+                f"🤏 {ultimo.name} avrà tempo per trovare l'amore vero! ❤️",
+            ])
+        elif gender_ultimo == "Maschio":
+            funny_phrases.extend([
+                f"💀 {ultimo.name} spargerà seme per il mondo...",
+                f"🤏 {ultimo.name} si vede che ce l'ha piccolo... almeno secondo i voti ricevuti!",
+            ])
+        else:
+            funny_phrases.extend([
+                f"💀 {ultimo.name} avrà tutto il tempo del mondo! ⏳",
+                f"🤏 {ultimo.name} è il nostro dark horse! 🐴",
+            ])
+    
+    if not funny_phrases:
+        funny_phrases = [
+            f"📏 Disparità di {stats['disparita']}",
+            f"😂 Voto medio {stats['voto_medio']}",
+        ]
+    
     funny_phrase = random.choice(funny_phrases)
+    
+    # PRONOSTICO DIVERTENTE DIFFERENZIATO
+    pronostici_list = []
+    
+    if len(members_sorted) >= 2:
+        primo = members_sorted[0]
+        primo_user = User.query.get(primo.user_id)
+        gender_primo = primo_user.gender if primo_user else "Altro"
+        
+        total_score = sum(scores)
+        percentuale = round((primo.calculated_total_score / total_score * 100), 1) if total_score > 0 else 0
+        
+        # PRONOSTICI FEMMINE
+        if gender_primo == "Femmina":
+            pronostici_list = [
+                f"👰 {primo.name} ha il {percentuale}% di diventare la signora X! 💍",
+                f"💒 Entro 2 anni {primo.name} sarà all'altare! 🎂",
+                f"💄 {primo.name} avrà 3 proposte entro l'anno! 💐",
+                f"🤵 Proponi a {primo.name}... fidati! 💒",
+                f"👑 {primo.name} è la regina! Prepara lo champagne! 🥂",
+            ]
+        
+        # PRONOSTICI MASCHI
+        elif gender_primo == "Maschio":
+            pronostici_list = [
+                f"🤵 {primo.name} ha il {percentuale}% di diventare uno sposo! 💍",
+                f"💒 Entro 2 anni {primo.name} correrà all'altare! 🏃‍♂️",
+                f"💪 {primo.name} ha soldi, classe, stile! Le donne lo adorano! 😍",
+                f"🎯 Qualche donna lo prenderà al volo! 🎪",
+                f"💰 Il portafoglio di {primo.name} è un magnete! 💍",
+            ]
+        
+        # PRONOSTICI NEUTRALI
+        else:
+            pronostici_list = [
+                f"🔮 {primo.name} ha il {percentuale}% di vincere! 💍",
+                f"💕 {primo.name} troverà l'amore perfetto! 🎯",
+                f"✨ Il matrimonio è vicino per {primo.name}! 👰",
+            ]
+
+        pronostico = random.choice(pronostici_list)
+    else:
+        pronostico = "🔮 Non ci sono abbastanza dati per il pronostico! 👥"
+    
+    # DATI PER I GRAFICI
+    member_names = [m.name for m in members_sorted]
+    total_scores = scores
     
     return render_template('league_stats.html', 
                          league=league, 
                          stats=stats,
                          funny_phrase=funny_phrase,
-                         members=members)
+                         pronostico=pronostico,
+                         members=members_sorted,
+                         member_names=member_names,
+                         total_scores=total_scores)
+
 
 @app.route("/league/join", methods=["GET", "POST"])
 def join_league():
@@ -1439,7 +1783,7 @@ def join_league():
             flash("Sei già membro di questa lega", "warning")
             return redirect(url_for("league_detail", league_id=league.id))
         
-        # IMPORTANTE: Verifica password se la lega è protetta
+        # Verifica password se la lega è protetta
         if league.password_hash:
             if not password:
                 flash("Questa lega richiede una password", "danger")
@@ -1618,11 +1962,22 @@ def vote(league_id):
                 if member.user_id == session['user_id']:
                     continue
                 
+                # NUOVO: Ottieni il marriage_score del membro votato come BASE
+                user_voted = User.query.get(member.user_id)
+                base_score = user_voted.marriage_score if user_voted else 0
+                
+                # Calcola il punteggio totale per questo membro
+                member_total_score = base_score
+                factor_details = {}
+                
                 for factor in factors:
                     score_key = f"score_{member.id}_{factor.id}"
                     score = request.form.get(score_key)
                     
                     if score:
+                        score_value = float(score)
+                        
+                        # Controlla se il voto per questo factor esiste già
                         existing_vote = FactorVote.query.filter_by(
                             factor_id=factor.id,
                             member_id=member.id,
@@ -1633,17 +1988,28 @@ def vote(league_id):
                             # Non permettere di modificare un voto già fatto
                             continue
                         else:
+                            # Aggiungi il voto al punteggio totale
+                            member_total_score += score_value
+                            factor_details[factor.name] = score_value
+                            
+                            # Salva il singolo voto
                             new_vote = FactorVote(
                                 factor_id=factor.id,
                                 member_id=member.id,
                                 voter_id=session['user_id'],
-                                score=float(score)
+                                score=score_value
                             )
                             db.session.add(new_vote)
+                
+                # Assicurati che il punteggio non sia negativo
+                member_total_score = max(0, member_total_score)
+                
+                # Aggiorna il punteggio totale del membro nella lega
+                member.total_score = int(member_total_score)
             
             db.session.commit()
             calculate_member_scores(league_id)
-            flash("Voti registrati con successo!", "success")
+            flash("Voti registrati con successo! Base: marriage_score + bonus/malus dai fattori", "success")
         except Exception as e:
             db.session.rollback()
             flash(f"Errore durante la registrazione dei voti: {str(e)}", "danger")
@@ -1657,11 +2023,18 @@ def vote(league_id):
     # Escludi l'utente loggato dalla visualizzazione
     filtered_members = [m for m in members if m.user_id != session['user_id']]
     
+    # NUOVO: Passa il marriage_score di ogni membro al template
+    member_scores = {}
+    for member in filtered_members:
+        user = User.query.get(member.user_id)
+        member_scores[member.id] = user.marriage_score if user else 0
+    
     return render_template("vote.html", 
                          league=league, 
                          members=filtered_members, 
                          factors=factors,
-                         voted_pairs=voted_pairs)
+                         voted_pairs=voted_pairs,
+                         member_scores=member_scores)
 
 
 @app.route("/privacy")

@@ -3,82 +3,104 @@
 {% block content %}
 
 <div style="max-width: 1200px; margin: 0 auto;">
+  
+  <!-- HEADER -->
   <div class="card">
     <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin-bottom: 0.5rem;">Statistiche</h2>
     <p style="text-align: center; color: #666; margin: 0;">Quello che i voti dicono di voi...</p>
   </div>
 
-  <!-- Box statistiche comiche - Nascoste da CSS, mostrate come tooltip -->
+  <!-- BOX STATISTICHE -->
   <div class="card" style="margin: 2rem auto; padding: 2rem;">
-  <div class="stats-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem;">
-    <div style="text-align: center;">
-      <p style="font-size: 2rem; margin-bottom: 0.5rem;">👑</p>
-      <p style="font-weight: 600; color: #333;">{{ stats.membro_piu_votato }}</p>
-      <p style="font-size: 0.9rem; color: #999;">Più Votato</p>
-    </div>
-    
-    <div style="text-align: center;">
-      <p style="font-size: 2rem; margin-bottom: 0.5rem;">💀</p>
-      <p style="font-weight: 600; color: #333;">{{ stats.membro_meno_votato }}</p>
-      <p style="font-size: 0.9rem; color: #999;">Meno Votato</p>
-    </div>
-    
-    
-    <div style="text-align: center;">
-      <p style="font-size: 2rem; margin-bottom: 0.5rem;">📊</p>
-      <p style="font-weight: 600; color: #333;">{{ stats.disparita }}</p>
-      <p style="font-size: 0.9rem; color: #999;">Disparità</p>
-    </div>
-    
-    <div style="text-align: center;">
-      <p style="font-size: 2rem; margin-bottom: 0.5rem;">🗳️</p>
-      <p style="font-weight: 600; color: #333;">{{ stats.totale_voti }}</p>
-      <p style="font-size: 0.9rem; color: #999;">Voti Totali</p>
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+      <div style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 0.5rem;">👑</p>
+        <p style="font-weight: 600; color: #333;">{{ stats.membro_piu_votato }}</p>
+        <p style="font-size: 0.9rem; color: #999;">Più Votato</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 0.5rem;">💀</p>
+        <p style="font-weight: 600; color: #333;">{{ stats.membro_meno_votato }}</p>
+        <p style="font-size: 0.9rem; color: #999;">Meno Votato</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 0.5rem;">🗳️</p>
+        <p style="font-weight: 600; color: #333;">{{ stats.totale_voti }}</p>
+        <p style="font-size: 0.9rem; color: #999;">Totale Membri</p>
+      </div>
     </div>
   </div>
-</div>
-  
-  <!-- Frase comica -->
-  <!-- Frase comica CENTRATA -->
-<div class="card" style="background: linear-gradient(135deg, #f5a9d0 0%, #d9a9f5 100%); text-align: center; margin: 2rem auto; padding: 1.5rem; max-width: 90%; width: 100%;">
-  <p style="font-size: 1.2rem; color: white; font-weight: 600; margin: 0;">
+
+  <!-- FRASE COMICA -->
+  <div class="card" style="background: linear-gradient(135deg, #f5a9d0 0%, #d9a9f5 100%); text-align: center; margin: 2rem auto; padding: 1.5rem; max-width: 90%;">
+    <p style="font-size: 1.2rem; color: white; font-weight: 600; margin: 0;">
       {{ funny_phrase }} 
-  </p>
-</div>
-  
-  <!-- Grafici in grid 2 colonne -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
-  <div class="card">
-    <h3 style="text-align: center; margin-bottom: 1.5rem;">Classifica</h3>
-    <canvas id="statsChart"></canvas>
+    </p>
   </div>
-  <div class="card">
-    <h3 style="text-align: center; margin-bottom: 1.5rem;">Distribuzione</h3>
-    <canvas id="pieChart"></canvas>
+
+  <!-- PRONOSTICO -->
+  <div class="card" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); text-align: center; margin: 2rem auto; padding: 2rem; max-width: 90%; border-radius: 15px; box-shadow: 0 8px 16px rgba(255, 215, 0, 0.4);">
+    <p style="font-size: 1.8rem; margin-bottom: 1rem; font-weight: bold;">🔮 IL PRONOSTICO CELESTE 🔮</p>
+    <p style="font-size: 1.3rem; color: white; font-weight: 600; margin: 0; line-height: 1.6;">
+      {{ pronostico }} 
+    </p>
+    <p style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.8); margin-top: 1rem; font-style: italic;">
+      ⭐ La precisione è garantita al 100%... o quasi! 😄
+    </p>
   </div>
-</div>
-  
+
+  <!-- GRAFICI -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+    <div class="card">
+      <h3 style="text-align: center; margin-bottom: 1.5rem;">Classifica Totale</h3>
+      <canvas id="statsChart"></canvas>
+    </div>
+    <div class="card">
+      <h3 style="text-align: center; margin-bottom: 1.5rem;">Distribuzione Punteggi</h3>
+      <canvas id="pieChart"></canvas>
+    </div>
+  </div>
+
+  <!-- BOTTONE TORNA -->
   <div style="text-align: center; margin: 2rem 0;">
     <a href="{{ url_for('league_detail', league_id=league.id) }}" class="btn btn-secondary">
       ← Torna alla Lega
     </a>
   </div>
+
 </div>
+
+<!-- DATI JSON PER GRAFICI -->
+<script type="application/json" id="chartData">
+{
+  "members": {{ member_names | tojson }},
+  "scores": {{ total_scores | tojson }},
+  "colors": [
+    {% for member in members %}"{{ member.user_color }}"{{ "," if not loop.last }}{% endfor %}
+  ]
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const membersList = {{ members | map(attribute='name') | list | tojson }};
-  const scoresList = {{ members | map(attribute='total_score') | list | tojson }};
+  // Leggi i dati
+  const chartData = JSON.parse(document.getElementById('chartData').textContent);
+  const membersList = chartData.members;
+  const scoresList = chartData.scores;
+  const chartColors = chartData.colors;
 
+  // GRAFICO A BARRE
   const ctx = document.getElementById('statsChart').getContext('2d');
   new Chart(ctx, {
     type: 'bar',
     data: {
       labels: membersList,
       datasets: [{
-        label: 'Punteggio',
+        label: 'Punteggio Totale (Base + Voti)',
         data: scoresList,
-        backgroundColor: ['#FFD700', '#C0C0C0', '#CD7F32', '#FF6B9D', '#A569BD', '#5DADE2', '#52BE80', '#F8B88B'],
+        backgroundColor: chartColors,
         borderColor: '#333',
         borderWidth: 2
       }]
@@ -86,10 +108,23 @@
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      scales: { y: { beginAtZero: true } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 10
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
     }
   });
 
+  // GRAFICO CIAMBELLA
   const pieCtx = document.getElementById('pieChart').getContext('2d');
   new Chart(pieCtx, {
     type: 'doughnut',
@@ -97,7 +132,7 @@
       labels: membersList,
       datasets: [{
         data: scoresList,
-        backgroundColor: ['#FFD700', '#C0C0C0', '#CD7F32', '#FF6B9D', '#A569BD', '#5DADE2', '#52BE80', '#F8B88B'],
+        backgroundColor: chartColors,
         borderColor: '#fff',
         borderWidth: 2
       }]
@@ -105,7 +140,22 @@
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { position: 'bottom' } }
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 15,
+            font: { size: 12 }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.label + ': ' + context.parsed + ' punti';
+            }
+          }
+        }
+      }
     }
   });
 </script>
