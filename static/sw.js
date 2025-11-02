@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fanta-matrimonio-v8';  // nuova icona 
+const CACHE_NAME = 'fantamatrimonio-v10-' + new Date().getTime();
 const STATIC_CACHE = [
   '/static/default.png',
   '/static/bkground.jpg',

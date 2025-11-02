@@ -5,8 +5,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import secrets
+from flask import make_response, send_file
 import random
 from PIL import Image, ImageDraw
 default_dir = os.path.join('static')
@@ -478,6 +479,16 @@ def send_reset_password_email(user_email, username, reset_url):
         print(f"Errore invio email reset password: {e}")
         return False
 
+
+
+@app.route('/static/manifest.json')
+def manifest():
+    response = make_response(send_file('static/manifest.json'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['ETag'] = str(int(time.time()))
+    return response
 
 @app.route('/league/<int:league_id>/leave', methods=['POST'])
 def leave_league(league_id):
