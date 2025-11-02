@@ -1664,24 +1664,24 @@ def league_stats(league_id):
         # FRASI PER L'ULTIMO
         if gender_ultimo == "Femmina":
             funny_phrases.extend([
-                f"💀 {ultimo.name} a gambe aperte,sempre!"
-                f"🤏 {ultimo.name} prenota un viaggetto a Lourdes,fidati!",
+                f" {ultimo.name} a gambe aperte,sempre!"
+                f" {ultimo.name} prenota un viaggetto a Lourdes,fidati!",
             ])
         elif gender_ultimo == "Maschio":
             funny_phrases.extend([
-                f"💀 {ultimo.name} spargerà seme per il mondo...",
-                f"🤏 {ultimo.name} ce l'hai piccolo, confessa!",
+                f" {ultimo.name} spargerà seme per il mondo...",
+                f" {ultimo.name} ce l'hai piccolo, confessa!",
             ])
         else:
             funny_phrases.extend([
-                f"💀 {ultimo.name} usa il preservativo, sempre!",
-                f"🤏 {ultimo.name}, eh marpione!",
+                f" {ultimo.name} usa il preservativo, sempre!",
+                f" {ultimo.name}, eh marpione!",
             ])
     
     if not funny_phrases:
         funny_phrases = [
-            f"📏 Disparità di {stats['disparita']}",
-            f"😂 Voto medio {stats['voto_medio']}",
+            f" Disparità di {stats['disparita']}",
+            f" Voto medio {stats['voto_medio']}",
         ]
     
     funny_phrase = random.choice(funny_phrases)
@@ -1728,7 +1728,7 @@ def league_stats(league_id):
 
         pronostico = random.choice(pronostici_list)
     else:
-        pronostico = "🔮 Non ci sono abbastanza dati per il pronostico! 👥"
+        pronostico = "Non ci sono abbastanza dati per il pronostico!"
     
     # DATI PER I GRAFICI
     member_names = [m.name for m in members_sorted]
