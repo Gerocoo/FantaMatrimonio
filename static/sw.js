@@ -1,11 +1,7 @@
-const CACHE_NAME = 'fanta-matrimonio-v5';  // Cambia versione per forzare l'update
+const CACHE_NAME = 'fanta-matrimonio-v8';  // nuova icona 
 const STATIC_CACHE = [
-  
-  
   '/static/default.png',
-  '/static/google-icon.png',
   '/static/bkground.jpg',
-  '/static/manifest.json'
 ];
 
 // Installazione: cacha solo risorse statiche
