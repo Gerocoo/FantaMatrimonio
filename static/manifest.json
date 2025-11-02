@@ -5,20 +5,20 @@
   "icons": [
      {
       "src": "/static/icons/background.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "sizes": "196x196",
+      "type": "image/svg",
       "purpose": "any"
     },
     {
       "src": "/static/icons/foreground.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "sizes": "196x196",
+      "type": "image/svg",
+      "purpose": "maskable"
     },
     {
       "src": "/static/icons/monochrome.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "sizes": "196x196",
+      "type": "image/svg",
       "purpose": "monochrome"
     }
   ],
