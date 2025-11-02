@@ -78,6 +78,7 @@ class User(db.Model):
     
     # Dati personali
     age = db.Column(db.Integer)
+    gender = db.Column(db.String(20), default="Altro")  # AGGIUNGI QUESTA RIGA
     employment_status = db.Column(db.String(100))
     longest_relationship = db.Column(db.Integer)  # In mesi
     num_relationships = db.Column(db.Integer)
@@ -100,7 +101,6 @@ class User(db.Model):
     
     def __repr__(self):
         return f'<User {self.username}>'
-
 
 class ChatMessage(db.Model):
     """Modello per i messaggi della chat"""
@@ -1657,25 +1657,25 @@ def league_stats(league_id):
             ])
         else:
             funny_phrases.extend([
-                f"👑 {primo.name} è il vincitore assoluto! 🏆",
+                f"👑 {primo.name} vincitore o perdente?",
                 f"⛓️‍💥 {primo.name} presto in galera",
             ])
         
         # FRASI PER L'ULTIMO
         if gender_ultimo == "Femmina":
             funny_phrases.extend([
-                f"💀 {ultimo.name} spargerà seme per il mondo... con calma! 🌍",
-                f"🤏 {ultimo.name} avrà tempo per trovare l'amore vero! ❤️",
+                f"💀 {ultimo.name} a gambe aperte,sempre!"
+                f"🤏 {ultimo.name} prenota un viaggetto a Lourdes,fidati!",
             ])
         elif gender_ultimo == "Maschio":
             funny_phrases.extend([
                 f"💀 {ultimo.name} spargerà seme per il mondo...",
-                f"🤏 {ultimo.name} si vede che ce l'ha piccolo... almeno secondo i voti ricevuti!",
+                f"🤏 {ultimo.name} ce l'hai piccolo, confessa!",
             ])
         else:
             funny_phrases.extend([
-                f"💀 {ultimo.name} avrà tutto il tempo del mondo! ⏳",
-                f"🤏 {ultimo.name} è il nostro dark horse! 🐴",
+                f"💀 {ultimo.name} usa il preservativo, sempre!",
+                f"🤏 {ultimo.name}, eh marpione!",
             ])
     
     if not funny_phrases:
@@ -1700,29 +1700,30 @@ def league_stats(league_id):
         # PRONOSTICI FEMMINE
         if gender_primo == "Femmina":
             pronostici_list = [
-                f"👰 {primo.name} ha il {percentuale}% di diventare la signora X! 💍",
-                f"💒 Entro 2 anni {primo.name} sarà all'altare! 🎂",
-                f"💄 {primo.name} avrà 3 proposte entro l'anno! 💐",
-                f"🤵 Proponi a {primo.name}... fidati! 💒",
-                f"👑 {primo.name} è la regina! Prepara lo champagne! 🥂",
+                f" {primo.name} ha il {percentuale}% di diventare la signora X! ",
+                f" Entro 2 anni {primo.name} sarà all'altare! ",
+                f" {primo.name} finalmente, ha smesso di fare la troi@!! ",
+                f" Proponi a {primo.name}... fidati! ",
+                f" {primo.name} è la regina! Prepara lo champagne! ",
             ]
         
         # PRONOSTICI MASCHI
         elif gender_primo == "Maschio":
             pronostici_list = [
-                f"🤵 {primo.name} ha il {percentuale}% di diventare uno sposo! 💍",
-                f"💒 Entro 2 anni {primo.name} correrà all'altare! 🏃‍♂️",
-                f"💪 {primo.name} ha soldi, classe, stile! Le donne lo adorano! 😍",
-                f"🎯 Qualche donna lo prenderà al volo! 🎪",
-                f"💰 Il portafoglio di {primo.name} è un magnete! 💍",
+                f""
+                f" {primo.name} ha il {percentuale}% di diventare uno sposo!",
+                f" Entro 2 anni {primo.name} correrà all'altare!",
+                f" {primo.name} ha soldi, classe, stile! Le donne lo adorano!",
+                f" Qualche donna lo prenderà al volo!",
+                f" Il portafoglio di {primo.name} è un magnete!",
             ]
         
         # PRONOSTICI NEUTRALI
         else:
             pronostici_list = [
-                f"🔮 {primo.name} ha il {percentuale}% di vincere! 💍",
-                f"💕 {primo.name} troverà l'amore perfetto! 🎯",
-                f"✨ Il matrimonio è vicino per {primo.name}! 👰",
+                f"{primo.name} ha il {percentuale}% di vincere!",
+                f"{primo.name} troverà l'amore perfetto!",
+                f"Il matrimonio è vicino per {primo.name}!",
             ]
 
         pronostico = random.choice(pronostici_list)
