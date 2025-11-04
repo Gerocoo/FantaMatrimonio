@@ -132,38 +132,6 @@
 </section>
 {% endif %}
 
-<!-- CHAT CONTAINER -->
-<div id="chat-container">
-  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
-    💬
-    <span id="chat-badge" style="display: none; background: rgb(219, 7, 95); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; position: absolute; top: -5px; right: -5px;">0</span>
-  </button>
-  
-  <div id="chat-float" class="chat-popup" style="display:none;">
-    <header class="chat-header">
-      <span>Chat</span>
-      <button onclick="closeChat()" class="close-chat">&times;</button>
-    </header>
-    <div id="chat-messages" class="chat-body"></div>
-    <form id="chat-form" class="chat-input-form" autocomplete="off">
-      <div class="chat-input-wrapper">
-        <button type="button" class="attach-btn" title="Allega file">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <input type="file" id="file-input" style="display: none;" multiple />
-        <textarea id="chat-input" placeholder="Scrivi un messaggio..." rows="1"></textarea>
-        <button type="submit" id="send-btn" class="send-btn" title="Invia">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
-          </svg>
-        </button>
-      </div>
-      <div id="file-preview" class="file-preview"></div>
-    </form>
-  </div>
-</div>
 
 <!-- CLASSIFICA E FATTORI -->
 <main>
@@ -206,15 +174,8 @@
     <p class="no-data">Nessun fattore definito</p>
   {% endif %}
 </main>
-
+{% include 'chat.html' %}
 <script>
-// APPLICA COLORI CON VARIABILI CSS
-document.querySelectorAll('.ranking-card').forEach(card => {
-  const color = card.getAttribute('data-color');
-  card.style.borderLeft = '5px solid ' + color;
-  const nameEl = card.querySelector('.member-name');
-  if (nameEl) nameEl.style.color = color;
-});
 
 // DATI GLOBALI
 const leagueCode = document.getElementById("leagueCode").value;
@@ -228,162 +189,6 @@ const chatBadge = document.getElementById("chat-badge");
 const sendBtn = document.getElementById("send-btn");
 const attachBtn = document.querySelector(".attach-btn");
 const fileInput = document.getElementById("file-input");
-
-let lastSeenMessageId = null;
-let unreadCount = 0;
-let selectedFiles = [];
-let selectedMemberId = null;
-
-// MAPPA COLORI: username -> colore
-const memberColors = {};
-document.querySelectorAll('[data-member-id]').forEach(el => {
-  const username = el.getAttribute('data-member-name');
-  const color = el.getAttribute('data-color');
-  memberColors[username] = color;
-});
-
-// ===== CHAT FUNCTIONS =====
-function updateButtonsVisibility() {
-  sendBtn.disabled = chatInput.value.trim() === '';
-}
-
-chatInput.addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  updateButtonsVisibility();
-});
-
-chatInput.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-});
-
-sendBtn.addEventListener('click', function(e) {
-  e.preventDefault();
-  sendMessage();
-});
-
-function updateBadge() {
-  chatBadge.style.display = unreadCount > 0 ? "inline" : "none";
-  if (unreadCount > 0) chatBadge.textContent = unreadCount;
-}
-
-function closeChat() { 
-  chatFloat.style.display = "none";
-}
-
-function getUserColor(username) {
-  return memberColors[username] || '#333333';
-}
-
-function loadMessages() {
-  fetch('/league/' + leagueCode + '/chat')
-    .then(res => res.json())
-    .then(messages => {
-      chatMessages.innerHTML = '';
-      messages.forEach(m => {
-        const userColor = getUserColor(m.user);
-        let content = '<strong style="color: ' + userColor + ';">' + m.user + '</strong>: <span style="color: #222;">' + m.message + '</span>';
-        
-        if (m.attachments && m.attachments.length > 0) {
-          content += '<div class="attachments">';
-          m.attachments.forEach(att => {
-            if (att.type === 'image') {
-              content += '<img src="' + att.url + '" style="max-width:200px;border-radius:8px;margin-top:5px;">';
-            } else if (att.type === 'audio') {
-              content += '<audio controls style="margin-top:5px;"><source src="' + att.url + '"></audio>';
-            } else {
-              content += '<a href="' + att.url + '" download style="display:block;margin-top:5px;">📎 ' + att.name + '</a>';
-            }
-          });
-          content += '</div>';
-        }
-        
-        chatMessages.innerHTML += '<div style="background:#f5f5f5;padding:8px;margin:5px;border-radius:8px;border-left: 3px solid ' + userColor + ';">' +
-          content +
-          '<span style="font-size:0.8em;color:#999;margin-left:8px;">' + new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</span>' +
-        '</div>';
-      });
-      if(messages.length > 0) lastSeenMessageId = messages[messages.length - 1].id;
-      unreadCount = 0;
-      updateBadge();
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    })
-    .catch(error => console.error('Errore:', error));
-}
-
-function sendMessage() {
-  const msg = chatInput.value.trim();
-  if(!msg && selectedFiles.length === 0) return;
-  
-  const formData = new FormData();
-  formData.append('message', msg);
-  selectedFiles.forEach((file, index) => formData.append('file_' + index, file));
-  
-  fetch('/league/' + leagueCode + '/chat', {
-    method: "POST",
-    body: formData
-  })
-  .then(res => res.json())
-  .then(() => {
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-    selectedFiles = [];
-    fileInput.value = '';
-    updateButtonsVisibility();
-    loadMessages();
-  })
-  .catch(error => alert('Errore: ' + error.message));
-}
-
-function checkNewMessages() {
-  fetch('/league/' + leagueCode + '/chat')
-    .then(res => res.json())
-    .then(messages => {
-      if(messages.length === 0) return;
-      if(lastSeenMessageId === null) {
-        lastSeenMessageId = messages[messages.length - 1].id;
-        return;
-      }
-      const newMessages = messages.filter(m => m.id > lastSeenMessageId);
-      if(newMessages.length > 0) {
-        unreadCount += newMessages.length;
-        updateBadge();
-        lastSeenMessageId = messages[messages.length - 1].id;
-      }
-    })
-    .catch(error => console.error('Errore:', error));
-}
-
-chatBtn.onclick = function() {
-  if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
-    chatFloat.style.display = "block";
-    unreadCount = 0;
-    updateBadge();
-    loadMessages();
-  } else {
-    chatFloat.style.display = "none";
-  }
-};
-
-setInterval(() => {
-  if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
-    checkNewMessages();
-  } else {
-    loadMessages();
-  }
-}, 4000);
-
-fetch('/league/' + leagueCode + '/chat')
-  .then(res => res.json())
-  .then(messages => {
-    if(messages.length > 0) lastSeenMessageId = messages[messages.length - 1].id;
-  })
-  .catch(error => console.error('Errore:', error));
-
-updateButtonsVisibility();
 
 // ===== FORM FUNCTIONS =====
 function generateMemberButtons() {

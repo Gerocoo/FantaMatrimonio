@@ -1,0 +1,40 @@
+<div class="quiz-container">
+    <h2>{{ event.title }}</h2>
+    <p>{{ event.description }}</p>
+    
+    <form id="quiz-form">
+        {% for q in questions %}
+        <div class="question">
+            <h4>{{ loop.index }}. {{ q.question }}</h4>
+            {% for option in q.options %}
+            <label>
+                <input type="radio" name="q{{ q.id }}" value="{{ loop.index0 }}">
+                {{ option }}
+            </label>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        
+        <button type="submit">Invia Risposte</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('quiz-form').onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const answers = {};
+    for (let [key, value] of formData.entries()) {
+        answers[key.substring(1)] = value;
+    }
+    
+    fetch('/league/{{ event.league_id }}/event/{{ event.id }}/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(answers)
+    }).then(r => r.json()).then(data => {
+        alert(`Hai ottenuto ${data.score} punti! Totale: ${data.total_score}`);
+        window.location.reload();
+    });
+};
+</script>
