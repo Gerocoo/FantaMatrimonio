@@ -2,83 +2,138 @@
 {% block title %}{{ league.name }} - FantaMatrimonio{% endblock %}
 {% block content %}
 
-
 <section class="league-info card">
   <h2>{{ league.name }}</h2>
   <p>{{ league.description or 'Nessuna descrizione' }}</p>
   <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
   <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
   
-  {% if voting and voting.end_time > now %}
-  <div style="margin: 2rem auto; max-width: 600px; padding: 2rem; border: 2px solid #E145A3; border-radius: 12px; text-align: center;">
-    <h3 style="color: #E145A3; margin: 0 0 1.5rem 0; font-family: 'Dancing Script', cursive; font-size: 1.8rem;">
-      ✓ Votazione in Corso
-    </h3>
-    
-    <!-- DATA E ORA INIZIO -->
-    <div style="margin-bottom: 1rem;">
-      <p style="margin: 0.3rem 0; color: #333; font-weight: 600; font-size: 0.95rem;">
-        Inizio: <strong>{{ voting.start_time.strftime('%d/%m/%Y %H:%M:%S') }}</strong>
-      </p>
-    </div>
-    
-    <!-- DATA E ORA FINE -->
-    <div style="margin-bottom: 1.5rem;">
-      <p style="margin: 0.3rem 0; color: #333; font-weight: 600; font-size: 0.95rem;">
-        Fine: <strong>{{ voting.end_time.strftime('%d/%m/%Y %H:%M:%S') }}</strong>
-      </p>
-    </div>
-    
-    <!-- COUNTDOWN GIORNI:ORE:MINUTI:SECONDI -->
-    <div style="margin: 1.5rem 0;">
-      <p style="margin: 0 0 0.8rem 0; color: #333; font-weight: 600; font-size: 0.95rem;">Tempo rimanente:</p>
-      <div id="countdownDisplay" style="font-size: 2.5rem; font-weight: 700; color: #E145A3; font-family: 'Courier New', monospace; letter-spacing: 3px;">
-        00:00:00:00
-      </div>
-    </div>
+{% if voting and voting.end_time > now %}
+<!-- TIMELINE PERCORSO GARA -->
+<div style="margin: 2rem auto; max-width: 900px; padding: 2rem; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border: 2px solid #E145A3; border-radius: 12px;">
+  <h3 style="color: #E145A3; font-family: 'Dancing Script', cursive; font-size: 1.6rem; margin: 0 0 1rem 0; text-align: center;">✓ Votazione in Corso</h3>
+  
+  <div style="text-align: center; margin-bottom: 0.5rem;">
+    <small style="color: #666; font-size: 0.85rem;">Scadenza: {{ voting.end_time.strftime('%d/%m/%Y %H:%M:%S') }}</small>
   </div>
-
-  <script>
-    const votingEndTime = new Date('{{ voting.end_time.isoformat() }}Z');
+  
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <div id="countdownDisplay" style="font-size: 1.8rem; font-weight: 700; color: #E145A3; font-family: 'Courier New', monospace; letter-spacing: 1px;">00:00:00:00</div>
+  </div>
+  
+  <!-- PERCORSO GARA -->
+  <div style="position: relative; margin: 2rem 0; padding: 1rem 1rem 0.5rem 1rem;">
+    <div style="position: absolute; top: 85%; left: 60px; right: 60px; height: 4px; background: linear-gradient(to right, #4CAF50, #E145A3, #f44336); z-index: 1;"></div>
     
-    function updateCountdown() {
-      const now = new Date();
-      const diff = votingEndTime - now;
-      
-      if (diff <= 0) {
-        document.location.reload();
-        return;
-      }
-      
-      // Calcola giorni, ore, minuti, secondi
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      
-      document.getElementById('countdownDisplay').textContent = 
-        `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      
-      // Colori dinamici
-      const display = document.getElementById('countdownDisplay');
-      display.style.color = '#E145A3';
-      
+    <div style="position: absolute; left: 0; top: 85%; transform: translateY(-50%); text-align: center; z-index: 5;">
+      <div style="font-size: 2rem; margin-bottom: 0.3rem;">🚩</div>
+      <p style="font-size: 0.7rem; color: #333; font-weight: 600; margin: 0;">START</p>
+    </div>
+    
+    <div style="position: absolute; right: 0; top: 85%; transform: translateY(-50%); text-align: center; z-index: 5;">
+      <div style="font-size: 2rem; margin-bottom: 0.3rem;">🏁</div>
+      <p style="font-size: 0.7rem; color: #333; font-weight: 600; margin: 0;">FINISH</p>
+    </div>
+    
+    <!-- CONTAINER AVATAR -->
+    <div style="position: relative; height: 100px; margin: 0 60px;">
+      {% if members %}
+        {% for member in members %}
+          <div class="avatar-member avatar-{{ member.id }}" data-member-id="{{ member.id }}" data-member-score="{{ member.calculated_total_score }}" style="position: absolute; left: 0; z-index: 3; transform: translateX(-50%); transition: left 0.5s ease; text-align: center; top: {{ (member.id * 67) % 130 }}px;">
+            
+            <p style="font-size: 0.7rem; color: #333; font-weight: 600; margin: 0 0 -3px 0; white-space: nowrap; background: rgba(255, 255, 255, 0.8); padding: 2px 8px; border-radius: 12px; display: inline-block;">{{ member.name }}</p>
+
+            
+            <div style="width: 50px; height: 50px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: {{ member.user_color }}; border-radius: 50%; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 3px solid white;">
+              {{ member.name[0].upper() }}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    
+   <div style="position: absolute; top: 90%; left: 60px; right: 60px; height: 0; z-index: 2; ">
+  {% if members %}
+    {% for member in members %}
+      <div class="score-display score-{{ member.id }}" 
+           data-member-id="{{ member.id }}" 
+           data-member-score="{{ member.calculated_total_score }}" 
+           style="position: absolute; align-items: start; left: 0; top: 15px; transform: translateX(-50%) rotate(90deg); transform-origin: center center; transition: left 0.5s ease; white-space: nowrap;">
+        <p style="font-size: 0.7rem; font-weight: bold; margin: 0; color: {{ member.user_color }}; background: rgba(255,255,255,0.95); padding: 2px 7px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">{{ "%.1f"|format(member.calculated_total_score) }}</p>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+  <div style="margin-top: 2rem; padding-top: 2.5rem; text-align: center;">
+    
+  </div>
+</div>
+
+<script>
+function updateVotingTimeline() {
+  const votingStartTime = new Date('{{ voting.start_time.isoformat() }}Z');
+  const votingEndTime = new Date('{{ voting.end_time.isoformat() }}Z');
+  const totalDuration = votingEndTime - votingStartTime;
+  const maxPossibleScore = 1200;
+  
+  function updateDisplay() {
+    const now = new Date();
+    const timeElapsed = now - votingStartTime;
+    const diff = votingEndTime - now;
+    
+    if (diff <= 0) {
+      location.reload();
+      return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    const countdownEl = document.getElementById('countdownDisplay');
+    if (countdownEl) {
+      countdownEl.textContent = `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       if (days === 0 && hours === 0 && minutes === 0 && seconds <= 10) {
-        display.style.color = '#f44336';
+        countdownEl.style.color = '#f44336';
       } else if (days === 0 && hours === 0 && minutes <= 5) {
-        display.style.color = '#ff9800';
+        countdownEl.style.color = '#ff9800';
+      } else {
+        countdownEl.style.color = '#E145A3';
       }
     }
     
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-  </script>
+    const timeProgressPercent = (timeElapsed / totalDuration) * 100;
+    
+    document.querySelectorAll('.avatar-member').forEach(avatarEl => {
+      const memberId = avatarEl.dataset.memberId;
+      const memberScore = parseFloat(avatarEl.dataset.memberScore);
+      const basePosition = (memberScore / maxPossibleScore * 90) + 5;
+      const bonusFromTime = (timeProgressPercent / 100) * 5;
+      const finalPosition = basePosition + bonusFromTime;
+      
+      avatarEl.style.left = finalPosition + '%';
+      
+      const scoreEl = document.querySelector(`.score-${memberId}`);
+      if (scoreEl) {
+        scoreEl.style.left = finalPosition +2.8 + '%';
+      }
+    });
+  }
   
+  updateDisplay();
+  setInterval(updateDisplay, 1000);
+}
+
+window.addEventListener('load', updateVotingTimeline);
+</script>
+
 {% else %}
   <div style="margin: 2rem auto; max-width: 600px; padding: 1.5rem; background: rgba(244, 67, 54, 0.1); border: 2px solid #f44336; border-radius: 12px; text-align: center; color: #f44336; font-weight: 600;">
     ✗ Votazione non in corso
   </div>
 {% endif %}
+
 
 
   <div class="actions" style="max-width: 300px; margin: 2rem auto; display: flex; flex-direction: column; gap: 1rem;">
@@ -100,7 +155,6 @@
   <input type="hidden" id="leagueCode" value="{{ league.code }}">
 </section>
 
-
 <style>
   .btn, a.btn, button.btn, input.btn[type="submit"], .btn-primary, .btn-secondary {
     display: flex !important;
@@ -119,12 +173,10 @@
   }
 </style>
 
-
 {% if is_owner %}
 <section id="manageLegaForm" class="popup-form" style="display:none;">
   <form class="login">
     <h3>Gestione Lega</h3>
-    
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
       <button type="button" onclick="toggleForm('addFactorForm'); toggleForm('manageLegaForm');" class="btn" style="display: block; background: #FFE4F0; color: #333; padding: 0.75rem; border-radius: 15px; font-weight: 600; border: none; cursor: pointer; text-align: center;">Aggiungi Fattore</button>
       <button type="button" onclick="toggleForm('votingManagementForm'); toggleForm('manageLegaForm');" class="btn" style="display: block; background: #FFE4F0; color: #333; padding: 0.75rem; border-radius: 15px; font-weight: 600; border: none; cursor: pointer; text-align: center;">Gestione Votazione</button>
@@ -136,7 +188,6 @@
   </form>
 </section>
 
-
 <section id="deleteMembersForm" class="popup-form" style="display:none;">
   <form class="login">
     <h3>Seleziona un membro da eliminare</h3>
@@ -144,7 +195,6 @@
     <button type="button" class="btn btn-secondary" onclick="toggleForm('deleteMembersForm'); toggleForm('manageLegaForm');">Torna indietro</button>
   </form>
 </section>
-
 
 <div id="confirmDeleteModal" class="popup-form" style="display:none;">
   <form class="login">
@@ -155,7 +205,6 @@
   </form>
 </div>
 
-
 <section id="deleteLeagueForm" class="popup-form" style="display:none;">
   <form class="login">
     <h3>Elimina Lega</h3>
@@ -165,41 +214,21 @@
   </form>
 </section>
 
-
 <section id="votingManagementForm" class="popup-form" style="display:none;">
   <form class="login">
     <h3>Gestione Votazione</h3>
-    
     <div style="margin: 1.5rem 0;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">
-        Data/Ora Inizio:
-      </label>
-      <input type="datetime-local" id="votingStartTime" 
-             style="width: 100%; padding: 0.6rem; border: 2px solid #E145A3; border-radius: 8px; font-weight: 600;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Data/Ora Inizio:</label>
+      <input type="datetime-local" id="votingStartTime" style="width: 100%; padding: 0.6rem; border: 2px solid #E145A3; border-radius: 8px; font-weight: 600;">
     </div>
-    
     <div style="margin: 1.5rem 0;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">
-        Data/Ora Fine:
-      </label>
-      <input type="datetime-local" id="votingEndTime" 
-             style="width: 100%; padding: 0.6rem; border: 2px solid #E145A3; border-radius: 8px; font-weight: 600;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Data/Ora Fine:</label>
+      <input type="datetime-local" id="votingEndTime" style="width: 100%; padding: 0.6rem; border: 2px solid #E145A3; border-radius: 8px; font-weight: 600;">
     </div>
-    
-    <button type="button" 
-            class="btn btn-primary" 
-            data-league-id="{{ league.id }}"
-            onclick="startNewVoting(this.dataset.leagueId)"
-            style="width: 100%; margin-bottom: 0.8rem;">
-      Inizia Votazione
-    </button>
-    
-    <button type="button" class="btn btn-secondary" onclick="toggleForm('votingManagementForm'); toggleForm('manageLegaForm');" style="width: 100%;">
-      Torna indietro
-    </button>
+    <button type="button" class="btn btn-primary" data-league-id="{{ league.id }}" onclick="startNewVoting(this.dataset.leagueId)" style="width: 100%; margin-bottom: 0.8rem;">Inizia Votazione</button>
+    <button type="button" class="btn btn-secondary" onclick="toggleForm('votingManagementForm'); toggleForm('manageLegaForm');" style="width: 100%;">Torna indietro</button>
   </form>
 </section>
-
 
 <script>
 function startNewVoting(leagueId) {
@@ -243,26 +272,22 @@ function startNewVoting(leagueId) {
 }
 </script>
 
-
 <section id="addFactorForm" class="popup-form" style="display:none;">
   <form method="post" class="login" action="{{ url_for('add_factor', league_id=league.id) }}">
     <h3>Aggiungi Fattore</h3>
     <input type="text" name="name" placeholder="Nome del fattore" required />
     <textarea name="description" placeholder="Descrizione" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
-    
     <select name="gender" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;">
       <option value="Entrambi">Visibile a entrambi</option>
       <option value="Maschio">Solo per maschi</option>
       <option value="Femmina">Solo per femmine</option>
     </select>
-    
     <input type="number" step="0.1" name="weight" placeholder="Peso (es. 1.0)" value="1.0" />
     <button type="submit" class="btn btn-primary">Aggiungi</button>
     <button type="button" class="btn btn-secondary" onclick="toggleForm('addFactorForm'); toggleForm('manageLegaForm');">Torna indietro</button>
   </form>
 </section>
 {% endif %}
-
 
 {% if is_member %}
 <section id="leaveLeagueForm" class="popup-form" style="display:none;">
@@ -274,7 +299,6 @@ function startNewVoting(leagueId) {
   </form>
 </section>
 {% endif %}
-
 
 <div id="chat-container">
   <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
@@ -307,16 +331,12 @@ function startNewVoting(leagueId) {
     </form>
   </div>
 </div>
-<!-- POPUP NOTIFICA VOTAZIONE -->
+
 <div id="votingNotificationModal" class="popup-form" style="display:none;">
   <form class="login" style="max-width: 400px;">
     <h3 id="notificationTitle" style="text-align: center; color: #E145A3; font-family: 'Dancing Script', cursive;">Votazione Iniziata</h3>
-    <p id="notificationMessage" style="text-align: center; color: #333; font-size: 1rem; margin: 1.5rem 0;">
-      La votazione è stata avviata con successo!
-    </p>
-    <button type="button" class="btn btn-primary" onclick="closeVotingNotification()" style="width: 100%;">
-      Ok
-    </button>
+    <p id="notificationMessage" style="text-align: center; color: #333; font-size: 1rem; margin: 1.5rem 0;">La votazione è stata avviata con successo!</p>
+    <button type="button" class="btn btn-primary" onclick="closeVotingNotification()" style="width: 100%;">Ok</button>
   </form>
 </div>
 
@@ -325,7 +345,6 @@ function showVotingNotification(title, message, callback) {
   document.getElementById('notificationTitle').textContent = title;
   document.getElementById('notificationMessage').textContent = message;
   document.getElementById('votingNotificationModal').style.display = 'block';
-  
   window.votingNotificationCallback = callback;
 }
 
@@ -336,7 +355,6 @@ function closeVotingNotification() {
   }
 }
 
-// Chiudi il modal al click esterno
 window.onclick = function(event) {
   const modal = document.getElementById('votingNotificationModal');
   if (event.target === modal) {
@@ -348,12 +366,9 @@ window.onclick = function(event) {
 <main>
   <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">Classifica Membri</h2>
   {% if members %}
-    <div class="ranking-cards-container"display: flex;>
+    <div class="ranking-cards-container">
       {% for member in members %}
-      <div class="ranking-card" 
-           data-member-id="{{ member.id }}" 
-           data-member-name="{{ member.name }}"
-           data-color="{{ member.user_color }}">
+      <div class="ranking-card" data-member-id="{{ member.id }}" data-member-name="{{ member.name }}" data-color="{{ member.user_color }}">
         <div class="ranking-position">
           {% if loop.index == 1 %}🥇
           {% elif loop.index == 2 %}🥈
@@ -371,7 +386,6 @@ window.onclick = function(event) {
   {% else %}
     <p class="no-data">Nessun membro ancora</p>
   {% endif %}
-
 
 <style>
 .standard-factor-card.factor-inactive,
@@ -542,14 +556,12 @@ input:checked + .slider:before {
 }
 </style>
 
-
 <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
 
 {% if is_owner %}
     <div class="container" style="max-width: 1200px; margin: 2rem auto;">
         <div class="search-container" style="text-align: center; margin-bottom: 2rem;">
-            <input type="text" id="factorSearch" placeholder="Cerca un fattore per nome o categoria..." 
-                   style="width: 100%; max-width: 400px; padding: 0.75rem; border-radius: 20px; border: 2px solid #E8B4D9;">
+            <input type="text" id="factorSearch" placeholder="Cerca un fattore per nome o categoria..." style="width: 100%; max-width: 400px; padding: 0.75rem; border-radius: 20px; border: 2px solid #E8B4D9;">
         </div>
 
         <div class="factors-cards-container">
@@ -558,10 +570,7 @@ input:checked + .slider:before {
                 <div class="factor-card standard-factor-card" data-name="{{ factor.name.lower() }}" data-category="{{ factor.category.lower() }}">
                     <div style="position: absolute; top: 1rem; right: 1rem;">
                         <label class="switch">
-                            <input type="checkbox" 
-                                   class="factor-toggle standard-factor-toggle" 
-                                   data-factor-id="{{ factor.id }}"
-                                   {% if factor.id in active_standard_factor_ids %}checked{% endif %}>
+                            <input type="checkbox" class="factor-toggle standard-factor-toggle" data-factor-id="{{ factor.id }}" {% if factor.id in active_standard_factor_ids %}checked{% endif %}>
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -595,7 +604,6 @@ input:checked + .slider:before {
     </div>
 {% endif %}
 
-
 <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori Custom</h2>
 
 {% if is_owner %}
@@ -605,10 +613,7 @@ input:checked + .slider:before {
             <div class="factor-card custom-factor-card">
                 <div style="position: absolute; top: 1rem; right: 1rem;">
                     <label class="switch">
-                        <input type="checkbox" 
-                               class="factor-toggle custom-factor-toggle" 
-                               data-factor-id="{{ factor.id }}"
-                               {% if factor.abilitato %}checked{% endif %}>
+                        <input type="checkbox" class="factor-toggle custom-factor-toggle" data-factor-id="{{ factor.id }}" {% if factor.abilitato %}checked{% endif %}>
                         <span class="slider round"></span>
                     </label>
                 </div>
@@ -641,7 +646,6 @@ input:checked + .slider:before {
         {% endif %}
     </div>
 {% endif %}
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
