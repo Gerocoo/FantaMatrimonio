@@ -1722,7 +1722,7 @@ main h2 {
 /* ========== CLASSIFICA MEMBRI ========== */
 
 .ranking-cards-container {
-  max-width: 500px;              /* LARGHEZZA FISSA */
+                /* LARGHEZZA FISSA */
   margin: 2rem auto;
   padding: 0 1rem;
 }
@@ -1893,7 +1893,7 @@ textarea#chat-input {
     max-width: 1200px;
   }
   
-  .ranking-cards-container,
+ 
   .factors-cards-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -3834,7 +3834,6 @@ thead {
   font-size: 2rem;
   color: var(--primary);
   text-align: center;
-  margin-bottom: 1.5rem;
   font-weight: 700;
 }
 

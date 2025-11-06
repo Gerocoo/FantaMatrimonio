@@ -28,6 +28,9 @@ from datetime import datetime
 
 
 
+
+
+
 try:
     from PIL import Image, ImageDraw
 
@@ -50,7 +53,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow()}
 
 
 google_bp = make_google_blueprint(
@@ -60,6 +65,15 @@ google_bp = make_google_blueprint(
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
 )
 app.register_blueprint(google_bp, url_prefix="/login")
+
+class Voting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    league = db.relationship('League', backref='votings')
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -588,6 +602,51 @@ def manage_factors(league_id):
                            all_factors=all_factors,
                            active_factor_ids=active_factor_ids)
 
+@app.route('/api/league/<int:league_id>/voting', methods=['GET'])
+def get_voting(league_id):
+    """Ritorna la votazione ATTUALE di una lega"""
+    voting = Voting.query.filter_by(league_id=league_id).order_by(Voting.created_at.desc()).first()
+    
+    if voting:
+        now = datetime.utcnow()
+        is_active = now >= voting.start_time and now <= voting.end_time
+        
+        return jsonify({
+            'id': voting.id,
+            'league_id': voting.league_id,
+            'start_time': voting.start_time.isoformat(),
+            'end_time': voting.end_time.isoformat(),
+            'is_active': is_active
+        })
+    
+    return jsonify({'is_active': False})
+
+@app.route('/api/league/<int:league_id>/voting', methods=['POST'])
+def create_voting(league_id):
+    """Crea una NUOVA votazione per una lega"""
+    data = request.json
+    
+    # Ricevi le date dal frontend
+    start_time = datetime.fromisoformat(data.get('start_time', '').replace('Z', '+00:00'))
+    end_time = datetime.fromisoformat(data.get('end_time', '').replace('Z', '+00:00'))
+    
+    if start_time >= end_time:
+        return jsonify({'success': False, 'message': 'Data fine deve essere dopo data inizio'})
+    
+    voting = Voting(
+        league_id=league_id,
+        start_time=start_time,
+        end_time=end_time
+    )
+    
+    db.session.add(voting)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'start_time': start_time.isoformat(),
+        'end_time': end_time.isoformat()
+    })
 
 @app.route('/league/<int:league_id>/toggle_factor/<int:factor_id>', methods=['POST'])
 def toggle_factor(league_id, factor_id):
@@ -677,6 +736,42 @@ def toggle_custom_factor(league_id, factor_id):
             'message': f'Errore: {str(e)}'
         }), 500
 
+from datetime import datetime, timedelta
+
+@app.route('/api/voting-status', methods=['GET'])
+def get_voting_status():
+    """Ritorna lo stato della votazione"""
+    voting_active = request.args.get('voting_active', 'false') == 'true'
+    if voting_active:
+        end_time = request.args.get('end_time')
+        return jsonify({
+            'active': True,
+            'end_time': end_time
+        })
+    return jsonify({'active': False})
+
+@app.route('/api/start-voting', methods=['POST'])
+def start_voting():
+    """Avvia la votazione con un countdown"""
+    duration_minutes = request.json.get('duration', 5)  # default 5 minuti
+    end_time = datetime.now() + timedelta(minutes=duration_minutes)
+    
+    # Salva in sessione o database
+    session['voting_active'] = True
+    session['voting_end_time'] = end_time.isoformat()
+    
+    return jsonify({
+        'success': True,
+        'end_time': end_time.isoformat()
+    })
+
+@app.route('/api/stop-voting', methods=['POST'])
+def stop_voting():
+    """Ferma la votazione"""
+    session['voting_active'] = False
+    return jsonify({'success': True})
+
+    
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -1723,6 +1818,9 @@ def league_detail(league_id):
         if active_standard_factor_ids:
             active_standard_factors_for_member = StandardFactor.query.filter(StandardFactor.id.in_(active_standard_factor_ids)).all()
     
+    # ===== CARICA VOTAZIONE ATTUALE =====
+    voting = Voting.query.filter_by(league_id=league_id).order_by(Voting.created_at.desc()).first()
+    
     return render_template(
         "league_detail.html", 
         league=league, 
@@ -1733,9 +1831,8 @@ def league_detail(league_id):
         all_standard_factors=all_standard_factors_for_owner,
         active_standard_factor_ids=active_standard_factor_ids,
         active_standard_factors=active_standard_factors_for_member,
+        voting=voting,  # ===== AGGIUNGI QUESTO =====
     )
-
-
 
 @app.route('/league/<int:league_id>/stats')
 def league_stats(league_id):
