@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000">
@@ -15,7 +16,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
   
   <!-- CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}">
+ <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}?v={{ cache_bust }}">
+
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -83,7 +85,19 @@
     </div>
   {% endif %}
 </nav>
-  
+  <!-- Custom Notification Prompt -->
+<div id="custom-notification-prompt" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;">
+  <div style="background: white;border-radius: 15px;box-shadow: 0 5px 25px rgba(0,0,0,0.2);width: 350px;overflow: hidden;padding-bottom: 0px;margin-bottom: 300px;"">
+    <div style="background: linear-gradient(135deg, #ff5ace 0%, #ffa3d7 100%); padding: 20px; text-align: center;">
+      <h3 style="color: white; margin: 0; font-family: 'Dancing Script', cursive; font-size: 1.8rem;">🔔 Notifiche</h3>
+    </div>
+    <div style="padding: 25px; text-align: center;">
+      <p style="margin: 0 0 20px; font-size: 1rem; color: #333;">Vuoi restare aggiornato su messaggi ed eventi della lega?</p>
+      <button id="accept-notifications" style="background: #333; color: white; border: none; border-radius: 25px; padding: 12px 25px; font-weight: bold; cursor: pointer; margin-right: 10px;">Sì, attiva!</button>
+      <button id="deny-notifications" style="background: #eee; color: #333; border: none; border-radius: 25px; padding: 12px 25px; font-weight: bold; cursor: pointer;">No, grazie</button>
+    </div>
+  </div>
+</div>
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
@@ -194,7 +208,40 @@ window.onload = function () {
         console.error("Errore inizializzazione Google Sign-In:", e);
     }
 }
-  </script>
+document.addEventListener('DOMContentLoaded', function() {
+  const customPrompt = document.getElementById('custom-notification-prompt');
+  const acceptBtn = document.getElementById('accept-notifications');
+  const denyBtn = document.getElementById('deny-notifications');
+
+  function showCustomPrompt() {
+    // Mostra il nostro popup solo se i permessi sono 'default'
+    if (Notification.permission === 'default') {
+      customPrompt.style.display = 'block';
+    }
+  }
+
+  // Fai apparire la nostra card dopo 5 secondi
+  setTimeout(showCustomPrompt, 5000);
+
+  // Se l'utente clicca "Sì, attiva!"
+  acceptBtn.addEventListener('click', function() {
+    customPrompt.style.display = 'none';
+    // ...e SOLO ORA mostriamo il popup del browser
+    Notification.requestPermission().then(function(permission) {
+      if (permission === 'granted') {
+        Swal.fire('Perfetto!', 'Notifiche attivate con successo.', 'success');
+      } else {
+        Swal.fire('Ok', 'Nessun problema. Puoi attivarle dalle impostazioni del browser.', 'info');
+      }
+    });
+  });
+
+  // Se l'utente clicca "No, grazie"
+  denyBtn.addEventListener('click', function() {
+    customPrompt.style.display = 'none';
+  });
+});
+</script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   if ('serviceWorker' in navigator) {
@@ -205,8 +252,10 @@ window.onload = function () {
         .catch(err => console.error("Errore nel Service Worker:", err));
     });
   }
-  
-</script>
+  </script>
+   {% block scripts %}
+   {% endblock %}
+
 
 </body>
 </html>

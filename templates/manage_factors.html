@@ -1,0 +1,78 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Funzione di Ricerca ---
+    const searchInput = document.getElementById('factorSearch');
+    const factorCards = document.querySelectorAll('.factor-card');
+
+    if (searchInput && factorCards.length > 0) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            factorCards.forEach(card => {
+                const name = card.dataset.name;
+                const category = card.dataset.category;
+                
+                if (name.includes(query) || category.includes(query)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // --- Funzione di Toggle ---
+    const toggles = document.querySelectorAll('.factor-toggle');
+    
+    // CORREZIONE QUI: Metti l'ID della lega in una variabile JS valida
+    const leagueId = "{{ league.id }}"; 
+
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const factorId = this.dataset.factorId;
+            const isChecked = this.checked;
+            
+            // Usa la variabile definita sopra
+            fetch(`/league/${leagueId}/toggle_factor/${factorId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Errore di rete o del server.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log(data.message);
+                    // Feedback visivo (es. con un toast)
+                    if (typeof Swal !== 'undefined') {
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true
+                        });
+                        Toast.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    }
+                } else {
+                    alert('Errore: ' + data.message);
+                    this.checked = !isChecked; // Ripristina
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Errore di rete. Riprova.');
+                this.checked = !isChecked; // Ripristina
+            });
+        });
+    });
+});
+</script>

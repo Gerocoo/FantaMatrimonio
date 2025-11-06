@@ -2,63 +2,47 @@
 {% block title %}{{ league.name }} - FantaMatrimonio{% endblock %}
 {% block content %}
 
-
 <section class="league-info card">
   <h2>{{ league.name }}</h2>
   <p>{{ league.description or 'Nessuna descrizione' }}</p>
   <p><strong>Codice Lega:</strong> <span class="code">{{ league.code }}</span></p>
   <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
   
-  <!-- TUTTI I BOTTONI IN UN UNICO CONTENITORE -->
   <div class="actions" style="max-width: 300px; margin: 2rem auto; display: flex; flex-direction: column; gap: 1rem;">
+    <a href="{{ url_for('league_stats', league_id=league.id) }}" class="btn btn-primary">Statistiche</a>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
     
-    <!-- Bottoni per TUTTI -->
-<a href="{{ url_for('league_stats', league_id=league.id) }}" class="btn btn-primary">Statistiche</a>
-<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
-    
-    <!-- Bottoni solo per MEMBRI -->
     {% if is_member %}
       <a href="{{ url_for('vote', league_id=league.id) }}" class="btn btn-primary">Vota</a>
       <button onclick="toggleForm('leaveLeagueForm')" class="btn btn-secondary">Lascia Lega</button>
     {% endif %}
     
-    <!-- Bottone solo per OWNER -->
     {% if is_owner %}
       <button onclick="toggleForm('manageLegaForm')" class="btn btn-primary">Gestione Lega</button>
     {% endif %}
-    
   </div>
 
-  <!-- Campi nascosti -->
   <input type="hidden" id="leagueId" value="{{ league.id }}">
   <input type="hidden" id="currentUserId" value="{{ session.get('user_id') }}">
   <input type="hidden" id="leagueCode" value="{{ league.code }}">
-  
 </section>
 
-
-    <input type="hidden" id="leagueId" value="{{ league.id }}">
-    <input type="hidden" id="currentUserId" value="{{ session.get('user_id') }}">
-    <input type="hidden" id="leagueCode" value="{{ league.code }}">
-
-  </div>
-</section>
 <style>
   .btn, a.btn, button.btn, input.btn[type="submit"], .btn-primary, .btn-secondary {
-  display: flex !important;                /* centra orizz. + vert. sempre */
-  justify-content: center !important;
-  align-items: center !important;
-  padding: 1rem 3rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  font-family: "Montserrat", sans-serif;
-  border-radius: 2rem;
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-  margin: 0.5rem 0;
-}
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: "Montserrat", sans-serif;
+    border-radius: 2rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    margin: 0.5rem 0;
+  }
 </style>
 
 {% if is_owner %}
@@ -80,8 +64,6 @@
   </form>
 </section>
 
-
-<!-- FORM ELIMINA MEMBRI -->
 <section id="deleteMembersForm" class="popup-form" style="display:none;">
   <form class="login">
     <h3>Seleziona un membro da eliminare</h3>
@@ -113,6 +95,13 @@
     <h3>Aggiungi Fattore</h3>
     <input type="text" name="name" placeholder="Nome del fattore" required />
     <textarea name="description" placeholder="Descrizione" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
+    
+    <select name="gender" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;">
+      <option value="Entrambi">Visibile a entrambi</option>
+      <option value="Maschio">Solo per maschi</option>
+      <option value="Femmina">Solo per femmine</option>
+    </select>
+    
     <input type="number" step="0.1" name="weight" placeholder="Peso (es. 1.0)" value="1.0" />
     <button type="submit" class="btn btn-primary">Aggiungi</button>
     <button type="button" class="btn btn-secondary" onclick="toggleForm('addFactorForm'); toggleForm('manageLegaForm');">Torna indietro</button>
@@ -120,7 +109,6 @@
 </section>
 {% endif %}
 
-<!-- FORM LASCIA LEGA -->
 {% if is_member %}
 <section id="leaveLeagueForm" class="popup-form" style="display:none;">
   <form class="login">
@@ -132,8 +120,40 @@
 </section>
 {% endif %}
 
+<!-- CHAT CONTAINER -->
+<div id="chat-container">
+  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
+    💬
+    <span id="chat-badge" style="display: none; background: rgb(219, 7, 95); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; position: absolute; top: -5px; right: -5px;">0</span>
+  </button>
+  
+  <div id="chat-float" class="chat-popup" style="display:none;">
+    <header class="chat-header">
+      <span>Chat</span>
+      <button onclick="closeChat()" class="close-chat">&times;</button>
+    </header>
+    <div id="chat-messages" class="chat-body"></div>
+    <form id="chat-form" class="chat-input-form" autocomplete="off">
+      <div class="chat-input-wrapper">
+        <button type="button" class="attach-btn" title="Allega file">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <input type="file" id="file-input" style="display: none;" multiple />
+        <textarea id="chat-input" placeholder="Scrivi un messaggio..." rows="1"></textarea>
+        <button type="submit" id="send-btn" class="send-btn" title="Invia">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+      <div id="file-preview" class="file-preview"></div>
+    </form>
+  </div>
+</div>
 
-<!-- CLASSIFICA E FATTORI -->
+<!-- CLASSIFICA -->
 <main>
   <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 2rem 0;">Classifica Membri</h2>
   {% if members %}
@@ -144,13 +164,15 @@
            data-member-name="{{ member.name }}"
            data-color="{{ member.user_color }}">
         <div class="ranking-position">
-          {% if loop.index == 1 %}1{% elif loop.index == 2 %}2{% elif loop.index == 3 %}3{% else %}{{ loop.index }}{% endif %}
-        </div>
+  {% if loop.index == 1 %}🥇
+  {% elif loop.index == 2 %}🥈
+  {% elif loop.index == 3 %}🥉
+  {% else %}{{ loop.index }}
+  {% endif %}
+</div>
         <div class="ranking-info">
           <h1 class="member-name">{{ member.name }}</h1>
           <p class="ranking-score">{{ "%.2f"|format(member.calculated_total_score) }}</p>
-          <div style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
-          </div>
         </div>
       </div>
       {% endfor %}
@@ -159,25 +181,372 @@
     <p class="no-data">Nessun membro ancora</p>
   {% endif %}
 
-  <h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
-  {% if factors %}
-    <div class="factors-cards-container">
-      {% for factor in factors %}
-      <div class="factor-card">
-        <h3>{{ factor.name }}</h3>
-        <p class="factor-description">{{ factor.description or 'Nessuna descrizione' }}</p>
-        <p class="factor-weight"><strong>Peso:</strong> {{ factor.weight }}</p>
-      </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="no-data">Nessun fattore definito</p>
-  {% endif %}
-</main>
-{% include 'chat.html' %}
-<script>
+<style>
+.standard-factor-card.factor-inactive,
+.custom-factor-card.factor-inactive {
+    background: #f5f5f5 !important;
+    border: 2px solid #ccc !important;
+    filter: grayscale(100%) !important;
+    opacity: 0.7 !important;
+}
 
-// DATI GLOBALI
+.standard-factor-card.factor-inactive .factor-category,
+.standard-factor-card.factor-inactive h3,
+.standard-factor-card.factor-inactive p,
+.standard-factor-card.factor-inactive .factor-weight,
+.custom-factor-card.factor-inactive h3,
+.custom-factor-card.factor-inactive p,
+.custom-factor-card.factor-inactive .factor-weight {
+    color: #999 !important;
+}
+
+.standard-factor-card.factor-active,
+.custom-factor-card.factor-active {
+    background: linear-gradient(135deg, #f5e6f9 0%, #fff 100%) !important;
+    border: 2px solid #B752B9 !important;
+    filter: grayscale(0%) !important;
+    opacity: 1 !important;
+    box-shadow: 0 4px 12px rgba(183, 82, 185, 0.2) !important;
+}
+
+.standard-factor-card.factor-active .factor-category {
+    color: #E75480 !important;
+}
+
+.standard-factor-card.factor-active h3,
+.custom-factor-card.factor-active h3 {
+    color: #B752B9 !important;
+}
+
+.standard-factor-card.factor-active p,
+.custom-factor-card.factor-active p {
+    color: #555 !important;
+}
+
+.standard-factor-card.factor-active .factor-weight,
+.custom-factor-card.factor-active .factor-weight {
+    color: #E75480 !important;
+}
+
+.factors-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem auto;
+    max-width: 1200px;
+}
+
+.factor-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.factor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(183, 82, 185, 0.2);
+}
+
+.standard-factor-card,
+.custom-factor-card {
+    padding-top: 3.5rem;
+}
+
+.factor-category {
+    display: inline-block;
+    color: #E75480;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.factor-content {
+    word-break: break-word;
+}
+
+.factor-weight {
+    color: #E75480;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #B752B9;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.search-container input {
+    width: 100%;
+    max-width: 500px;
+    padding: 0.75rem 1rem;
+    border: 2px solid #E8B4D9;
+    border-radius: 25px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #B752B9;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
+    font-style: italic;
+}
+</style>
+
+<!-- FATTORI STANDARD -->
+<h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori di Valutazione</h2>
+
+{% if is_owner %}
+    <div class="container" style="max-width: 1200px; margin: 2rem auto;">
+        <div class="search-container" style="text-align: center; margin-bottom: 2rem;">
+            <input type="text" id="factorSearch" placeholder="Cerca un fattore per nome o categoria..." 
+                   style="width: 100%; max-width: 400px; padding: 0.75rem; border-radius: 20px; border: 2px solid #E8B4D9;">
+        </div>
+
+        <div class="factors-cards-container">
+            {% if all_standard_factors %}
+                {% for factor in all_standard_factors %}
+                <div class="factor-card standard-factor-card" data-name="{{ factor.name.lower() }}" data-category="{{ factor.category.lower() }}">
+                    <div style="position: absolute; top: 1rem; right: 1rem;">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   class="factor-toggle standard-factor-toggle" 
+                                   data-factor-id="{{ factor.id }}"
+                                   {% if factor.id in active_standard_factor_ids %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="factor-content">
+                        <span class="factor-category" style="color: #E75480; font-size: 0.9rem; font-weight: bold;">{{ factor.category }}</span>
+                        <h3 style="margin: 0.5rem 0; color: #B752B9; font-size: 1.2rem;">{{ factor.name }}</h3>
+                        <p style="margin: 0.5rem 0 1rem; font-size: 0.9rem; color: #555;">{{ factor.description }}</p>
+                        <div class="factor-weight" style="color: #E75480; font-weight: bold;">Peso: {{ factor.default_weight }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-data" style="text-align: center; color: #999;">Nessun fattore standard disponibile</p>
+            {% endif %}
+        </div>
+    </div>
+{% else %}
+    <div class="factors-cards-container">
+        {% if active_standard_factors %}
+            {% for factor in active_standard_factors %}
+            <div class="factor-card">
+                <h3 style="margin: 0 0 0.5rem; color: #B752B9;">{{ factor.name }}</h3>
+                <p class="factor-description" style="font-size: 0.9rem; color: #666;">{{ factor.description or 'Nessuna descrizione' }}</p>
+                <p class="factor-weight" style="color: #E75480; font-weight: bold; margin-top: 0.5rem;">Peso: {{ factor.default_weight }}</p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data" style="text-align: center; color: #999;">Nessun fattore standard attivato in questa lega</p>
+        {% endif %}
+    </div>
+{% endif %}
+
+<!-- FATTORI CUSTOM -->
+<h2 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 3rem 0 2rem;">Fattori Custom</h2>
+
+{% if is_owner %}
+    <div class="factors-cards-container">
+        {% if custom_factors %}
+            {% for factor in custom_factors %}
+            <div class="factor-card custom-factor-card">
+                <div style="position: absolute; top: 1rem; right: 1rem;">
+                    <label class="switch">
+                        <input type="checkbox" 
+                               class="factor-toggle custom-factor-toggle" 
+                               data-factor-id="{{ factor.id }}"
+                               {% if factor.abilitato %}checked{% endif %}>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                
+                <div class="factor-content">
+                    <h3 style="margin: 0.5rem 0; color: #B752B9; font-size: 1.2rem;">{{ factor.name }}</h3>
+                    <p style="margin: 0.5rem 0 1rem; font-size: 0.9rem; color: #555;">{{ factor.description or 'Nessuna descrizione' }}</p>
+                    <div class="factor-weight" style="color: #E75480; font-weight: bold;">Peso: {{ factor.weight }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data" style="text-align: center; color: #999;">Nessun fattore custom in questa lega</p>
+        {% endif %}
+    </div>
+{% else %}
+    <div class="factors-cards-container">
+        {% if custom_factors %}
+            {% for factor in custom_factors %}
+            {% if factor.abilitato %}
+            <div class="factor-card">
+                <h3 style="margin: 0 0 0.5rem; color: #B752B9;">{{ factor.name }}</h3>
+                <p class="factor-description" style="font-size: 0.9rem; color: #666;">{{ factor.description or 'Nessuna descrizione' }}</p>
+                <p class="factor-weight" style="color: #E75480; font-weight: bold; margin-top: 0.5rem;">Peso: {{ factor.weight }}</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+        {% else %}
+            <p class="no-data" style="text-align: center; color: #999;">Nessun fattore custom in questa lega</p>
+        {% endif %}
+    </div>
+{% endif %}
+
+<!-- JAVASCRIPT -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const leagueId = "{{ league.id }}";
+    
+    const searchInput = document.getElementById('factorSearch');
+    const factorCards = document.querySelectorAll('.standard-factor-card');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            factorCards.forEach(card => {
+                const name = card.dataset.name || '';
+                const category = card.dataset.category || '';
+                card.style.display = (name.includes(query) || category.includes(query)) ? '' : 'none';
+            });
+        });
+    }
+    
+    function updateCardColor(toggle) {
+        const card = toggle.closest('.standard-factor-card, .custom-factor-card');
+        if (toggle.checked) {
+            card.classList.add('factor-active');
+            card.classList.remove('factor-inactive');
+        } else {
+            card.classList.add('factor-inactive');
+            card.classList.remove('factor-active');
+        }
+    }
+    
+    const standardToggles = document.querySelectorAll('.standard-factor-toggle');
+    standardToggles.forEach(toggle => {
+        updateCardColor(toggle);
+        
+        toggle.addEventListener('change', function() {
+            const factorId = this.dataset.factorId;
+            const isChecked = this.checked;
+            updateCardColor(this);
+            
+            fetch(`/league/${leagueId}/toggle_factor/${factorId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    alert('Errore: ' + data.message);
+                    this.checked = !isChecked;
+                    updateCardColor(this);
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                this.checked = !isChecked;
+                updateCardColor(this);
+            });
+        });
+    });
+    
+    const customToggles = document.querySelectorAll('.custom-factor-toggle');
+    customToggles.forEach(toggle => {
+        updateCardColor(toggle);
+        
+        toggle.addEventListener('change', function() {
+            const factorId = this.dataset.factorId;
+            const isChecked = this.checked;
+            updateCardColor(this);
+            
+            fetch(`/league/${leagueId}/toggle_custom_factor/${factorId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ abilitato: isChecked })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    alert('Errore: ' + data.message);
+                    this.checked = !isChecked;
+                    updateCardColor(this);
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                this.checked = !isChecked;
+                updateCardColor(this);
+            });
+        });
+    });
+});
+
+document.querySelectorAll('.ranking-card').forEach(card => {
+  const color = card.getAttribute('data-color');
+  card.style.borderLeft = '5px solid ' + color;
+  const nameEl = card.querySelector('.member-name');
+  if (nameEl) nameEl.style.color = color;
+});
+
 const leagueCode = document.getElementById("leagueCode").value;
 const currentUserId = parseInt(document.getElementById("currentUserId").value);
 const chatMessages = document.getElementById("chat-messages");
@@ -187,10 +556,143 @@ const chatFloat = document.getElementById("chat-float");
 const chatBtn = document.getElementById("toggle-chat");
 const chatBadge = document.getElementById("chat-badge");
 const sendBtn = document.getElementById("send-btn");
-const attachBtn = document.querySelector(".attach-btn");
-const fileInput = document.getElementById("file-input");
 
-// ===== FORM FUNCTIONS =====
+let lastSeenMessageId = null;
+let unreadCount = 0;
+let selectedMemberId = null;
+
+const memberColors = {};
+document.querySelectorAll('[data-member-id]').forEach(el => {
+  const username = el.getAttribute('data-member-name');
+  const color = el.getAttribute('data-color');
+  memberColors[username] = color;
+});
+
+function updateButtonsVisibility() {
+  sendBtn.disabled = chatInput.value.trim() === '';
+}
+
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  updateButtonsVisibility();
+});
+
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  sendMessage();
+});
+
+function updateBadge() {
+  chatBadge.style.display = unreadCount > 0 ? "inline" : "none";
+  if (unreadCount > 0) chatBadge.textContent = unreadCount;
+}
+
+function closeChat() { 
+  chatFloat.style.display = "none";
+}
+
+function getUserColor(username) {
+  return memberColors[username] || '#333333';
+}
+
+function loadMessages() {
+  fetch('/league/' + leagueCode + '/chat')
+    .then(res => res.json())
+    .then(messages => {
+      chatMessages.innerHTML = '';
+      messages.forEach(m => {
+        const userColor = getUserColor(m.user);
+        let content = '<strong style="color: ' + userColor + ';">' + m.user + '</strong>: <span style="color: #222;">' + m.message + '</span>';
+        
+        chatMessages.innerHTML += '<div style="background:#f5f5f5;padding:8px;margin:5px;border-radius:8px;border-left: 3px solid ' + userColor + ';">' +
+          content +
+          '<span style="font-size:0.8em;color:#999;margin-left:8px;">' + new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</span>' +
+        '</div>';
+      });
+      if(messages.length > 0) lastSeenMessageId = messages[messages.length - 1].id;
+      unreadCount = 0;
+      updateBadge();
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    })
+    .catch(error => console.error('Errore:', error));
+}
+
+function sendMessage() {
+  const msg = chatInput.value.trim();
+  if(!msg) return;
+  
+  const formData = new FormData();
+  formData.append('message', msg);
+  
+  fetch('/league/' + leagueCode + '/chat', {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(() => {
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    updateButtonsVisibility();
+    loadMessages();
+  })
+  .catch(error => alert('Errore: ' + error.message));
+}
+
+function checkNewMessages() {
+  fetch('/league/' + leagueCode + '/chat')
+    .then(res => res.json())
+    .then(messages => {
+      if(messages.length === 0) return;
+      if(lastSeenMessageId === null) {
+        lastSeenMessageId = messages[messages.length - 1].id;
+        return;
+      }
+      const newMessages = messages.filter(m => m.id > lastSeenMessageId);
+      if(newMessages.length > 0) {
+        unreadCount += newMessages.length;
+        updateBadge();
+        lastSeenMessageId = messages[messages.length - 1].id;
+      }
+    })
+    .catch(error => console.error('Errore:', error));
+}
+
+chatBtn.onclick = function() {
+  if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
+    chatFloat.style.display = "block";
+    unreadCount = 0;
+    updateBadge();
+    loadMessages();
+  } else {
+    chatFloat.style.display = "none";
+  }
+};
+
+setInterval(() => {
+  if(chatFloat.style.display === "none" || chatFloat.style.display === "") {
+    checkNewMessages();
+  } else {
+    loadMessages();
+  }
+}, 4000);
+
+fetch('/league/' + leagueCode + '/chat')
+  .then(res => res.json())
+  .then(messages => {
+    if(messages.length > 0) lastSeenMessageId = messages[messages.length - 1].id;
+  })
+  .catch(error => console.error('Errore:', error));
+
+updateButtonsVisibility();
+
 function generateMemberButtons() {
   const memberElements = document.querySelectorAll('[data-member-id]');
   const membersList = document.getElementById('membersButtonsList');
@@ -266,8 +768,24 @@ function confirmSingleDelete() {
 }
 
 function confirmDeleteLeague() {
-  document.getElementById("deleteLeagueForm_hidden").submit();
+  const leagueId = document.getElementById('leagueId').value;
+  if (confirm('Sei veramente sicuro?')) {
+    fetch(`/league/${leagueId}/delete`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        window.location.href = '/dashboard';
+      } else {
+        alert('Errore: ' + data.message);
+      }
+    });
+  }
 }
 </script>
+
+</main>
 
 {% endblock %}

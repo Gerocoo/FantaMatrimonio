@@ -1,125 +1,185 @@
 {% extends "base.html" %}
 
 {% block title %}Vota - {{ league.name }}{% endblock %}
+
 {% block content %}
-<div class="card">
-  <h2>Vota per {{ league.name }}</h2>
-  <p>Assegna un punteggio da 1 a 10 per ogni fattore e membro</p>
+<div class="vote-container">
+  <div class="card">
+    <h2>Vota per {{ league.name }}</h2>
+    <p>Assegna un punteggio da 1 a 10 per ogni fattore e membro</p>
+  </div>
+
+  {% if members|length == 0 %}
+    <div class="card" style="text-align: center;">
+      <p>Nessun partecipante a questa lega</p>
+    </div>
+  {% else %}
+    <form method="post" class="voting-form">
+      
+      <!-- FATTORI STANDARD (ATTIVATI) -->
+      {% if active_standard_factors %}
+        <h2 style="text-align: center; font-family: 'Dancing Script', cursive; color: #B752B9; margin: 2rem 0 1rem;">Fattori Standard</h2>
+        {% for factor in active_standard_factors %}
+          <div class="factor-container">
+            <h3 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 0 0 0.5rem 0; color: #B752B9;">
+              {{ factor.name }}</h3>
+            <br>
+            <span style="font-size: 2rem; opacity: 0.7;">(Peso: {{ factor.default_weight }})</span>
+            <p style="text-align: center; opacity: 0.8; margin-bottom: 1.5rem; color: #666;">
+              {{ factor.description or 'Nessuna descrizione' }}
+            </p>
+
+            <!-- Slider -->
+            <div class="members-slider-container">
+              <div class="members-slider" id="slider_std_{{ factor.id }}">
+                {% for member in members %}
+                  {% set is_voted = (member.id, factor.id) in voted_pairs %}
+                  
+                  <div class="member-card {% if is_voted %}voted-member{% endif %}">
+                    <h4 class="member-name">
+                      {{ member.name }}
+                      {% if is_voted %}<span class="voted-badge">✓ Votato</span>{% endif %}
+                    </h4>
+                    
+                    <label class="member-label">Punteggio (1-10)</label>
+                    <div class="rating-group" {% if is_voted %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                      {% for i in range(1, 11) %}
+                        <input type="radio" 
+                               id="score_std_{{ member.id }}_{{ factor.id }}_{{ i }}" 
+                               name="score_{{ member.id }}_{{ factor.id }}" 
+                               value="{{ i }}"
+                               {% if is_voted %}disabled{% endif %}>
+                        <label for="score_std_{{ member.id }}_{{ factor.id }}_{{ i }}" 
+                               class="circle">{{ i }}</label>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              
+              <!-- Indicatori di scroll -->
+              <div class="scroll-indicators" id="indicators_std_{{ factor.id }}">
+                {% for member in members %}
+                  <span class="scroll-dot"></span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- FATTORI CUSTOM -->
+      {% if factors %}
+        <h2 style="text-align: center; font-family: 'Dancing Script', cursive; color: #B752B9; margin: 2rem 0 1rem;">Fattori Custom</h2>
+        {% for factor in factors %}
+          <div class="factor-container">
+            <h3 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 0 0 0.5rem 0; color: #B752B9;">
+              {{ factor.name }} 
+              <span style="font-size: 0.8rem; opacity: 0.7;">(Peso: {{ factor.weight }})</span>
+            </h3>
+            <p style="text-align: center; opacity: 0.8; margin-bottom: 1.5rem; color: #666;">
+              {{ factor.description or 'Nessuna descrizione' }}
+            </p>
+
+            <!-- Slider -->
+            <div class="members-slider-container">
+              <div class="members-slider" id="slider_{{ factor.id }}">
+                {% for member in members %}
+                  {% set is_voted = (member.id, factor.id) in voted_pairs %}
+                  
+                  <div class="member-card {% if is_voted %}voted-member{% endif %}">
+                    <h4 class="member-name">
+                      {{ member.name }}
+                      {% if is_voted %}<span class="voted-badge">✓ Votato</span>{% endif %}
+                    </h4>
+                    
+                    <label class="member-label">Punteggio (1-10)</label>
+                    <div class="rating-group" {% if is_voted %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+                      {% for i in range(1, 11) %}
+                        <input type="radio" 
+                               id="score_{{ member.id }}_{{ factor.id }}_{{ i }}" 
+                               name="score_{{ member.id }}_{{ factor.id }}" 
+                               value="{{ i }}"
+                               {% if is_voted %}disabled{% endif %}>
+                        <label for="score_{{ member.id }}_{{ factor.id }}_{{ i }}" 
+                               class="circle">{{ i }}</label>
+                      {% endfor %}
+                    </div>
+                    
+                    <label class="member-label">Booster / Sconto</label>
+                    <select name="modifier_{{ member.id }}_{{ factor.id }}" 
+                            class="booster-select"
+                            {% if is_voted %}disabled style="opacity: 0.5;"{% endif %}>
+                      <option value="1">Normale</option>
+                      <option value="1.1">+10% Booster</option>
+                      <option value="1.25">+25% Super Booster</option>
+                      <option value="0.9">-10% Penalità</option>
+                      <option value="0.75">-25% Grande Penalità</option>
+                    </select>
+                  </div>
+                {% endfor %}
+              </div>
+              
+              <!-- Indicatori di scroll -->
+              <div class="scroll-indicators" id="indicators_{{ factor.id }}">
+                {% for member in members %}
+                  <span class="scroll-dot"></span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Se non ci sono né fattori standard né custom -->
+      {% if not active_standard_factors and not factors %}
+        <div class="card" style="text-align: center;">
+          <p style="color: #B752B9; font-weight: bold;">❌ Nessun fattore da votare</p>
+          <p>L'amministratore deve prima attivare o aggiungere fattori.</p>
+          <a href="{{ url_for('league_detail', league_id=league.id) }}" class="btn btn-secondary">Torna indietro</a>
+        </div>
+      {% endif %}
+
+      {% if active_standard_factors or factors %}
+        <div style="text-align: center; margin: 3rem 0;">
+          <button type="submit" class="btn btn-primary" style="width: 196px;">Invia Voti</button>
+          <a href="{{ url_for('league_detail', league_id=league.id) }}" class="btn btn-secondary" style="width: 196px;">Annulla</a>
+        </div>
+      {% endif %}
+    </form>
+  {% endif %}
 </div>
 
-{% if members|length == 0 %}
-  <div class="card" style="text-align: center;">
-    <p>Nessun partecipante a questa lega</p>
-  </div>
-{% else %}
-  <form method="post" class="login" style="max-width: 1200px;">
-    {% for factor in factors %}
-      <div class="factor-container">
-        <h3 style="font-family: 'Dancing Script', cursive; text-align: center; margin: 0 0 0.5rem 0;">
-          {{ factor.name }} <span style="font-size: 0.8rem; opacity: 0.7;">(Peso: {{ factor.weight }})</span>
-        </h3>
-        <p style="text-align: center; opacity: 0.8; margin-bottom: 1.5rem;">
-          {{ factor.description }}
-        </p>
-
-        <!-- Slider -->
-        <div class="members-slider-container">
-          <div class="members-slider" id="slider_{{ factor.id }}">
-            {% for member in members %}
-              {% set is_voted = (member.id, factor.id) in voted_pairs %}
-              
-              <div class="member-card {% if is_voted %}voted-member{% endif %}">
-                <h4 class="member-name">
-                  {{ member.name }}
-                  {% if is_voted %}<span class="voted-badge">✓ Votato</span>{% endif %}
-                </h4>
-                
-                <label class="member-label">Punteggio (1-10)</label>
-                <div class="rating-group" {% if is_voted %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
-                  {% for i in range(1, 11) %}
-                    <input type="radio" 
-                           id="score_{{ member.id }}_{{ factor.id }}_{{ i }}" 
-                           name="score_{{ member.id }}_{{ factor.id }}" 
-                           value="{{ i }}"
-                           {% if is_voted %}disabled{% endif %}>
-                    <label for="score_{{ member.id }}_{{ factor.id }}_{{ i }}" 
-                           class="circle">{{ i }}</label>
-                  {% endfor %}
-                </div>
-                
-                <label class="member-label">Booster / Sconto</label>
-                <select name="modifier_{{ member.id }}_{{ factor.id }}" 
-                        class="booster-select"
-                        {% if is_voted %}disabled style="opacity: 0.5;"{% endif %}>
-                  <option value="1">Normale</option>
-                  <option value="1.1">+10% Booster</option>
-                  <option value="1.25">+25% Super Booster</option>
-                  <option value="0.9">-10% Penalità</option>
-                  <option value="0.75">-25% Grande Penalità</option>
-                </select>
-              </div>
-            {% endfor %}
-          </div>
-          
-          <!-- Indicatori di scroll -->
-          <div class="scroll-indicators" id="indicators_{{ factor.id }}">
-            {% for member in members %}
-              <span class="scroll-dot"></span>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    {% endfor %}
-
-    <div style="text-align: center; margin: 3rem 0;">
-      <button type="submit" class="btn btn-primary" style="width: 196px;">Invia Voti</button>
-      <a href="{{ url_for('league_detail', league_id=league.id) }}" class="btn btn-secondary" style="width: 196px;">Annulla</a>
-    </div>
-  </form>
-{% endif %}
-
 <script>
-  // Scroll slider con indicatori
-  document.querySelectorAll('.members-slider').forEach(slider => {
-    const factorId = slider.id.replace('slider_', '');
-    const indicators = document.querySelectorAll(`#indicators_${factorId} .scroll-dot`);
-    
-    slider.addEventListener('scroll', () => {
-      const scrollLeft = slider.scrollLeft;
-      const cardWidth = 340;
-      const activeIndex = Math.round(scrollLeft / cardWidth);
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.members-slider').forEach(slider => {
+      const sliderId = slider.id;
+      const indicators = document.querySelectorAll(`#indicators_${sliderId} .scroll-dot`);
+      
+      function updateIndicators() {
+        const scrollLeft = slider.scrollLeft;
+        const cardWidth = 340 + 24;
+        const activeIndex = Math.round(scrollLeft / cardWidth);
+        
+        indicators.forEach((dot, index) => {
+          dot.classList.toggle('active', index === activeIndex);
+        });
+      }
+      
+      slider.addEventListener('scroll', updateIndicators);
       
       indicators.forEach((dot, index) => {
-        dot.classList.toggle('active', index === activeIndex);
-      });
-    });
-    
-    indicators.forEach((dot, index) => {
-      dot.addEventListener('click', () => {
-        slider.scrollTo({
-          left: index * 340,
-          behavior: 'smooth'
+        dot.addEventListener('click', () => {
+          slider.scrollTo({
+            left: index * (340 + 24),
+            behavior: 'smooth'
+          });
         });
       });
+      
+      updateIndicators();
     });
   });
-
-  function scrollSlider(direction, sliderId) {
-    const slider = document.getElementById(sliderId);
-    const scrollAmount = 340;
-    
-    if (direction === 'left') {
-      slider.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      });
-    } else {
-      slider.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  }
 </script>
 
 {% endblock %}

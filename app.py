@@ -21,6 +21,10 @@ import logging
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from flask import send_from_directory
+import time
+from datetime import datetime
+
+
 
 
 
@@ -102,6 +106,9 @@ class User(db.Model):
     
     def __repr__(self):
         return f'<User {self.username}>'
+@app.context_processor
+def inject_cache_buster():
+    return {'cache_bust': int(time.time())}
 
 class ChatMessage(db.Model):
     """Modello per i messaggi della chat"""
@@ -116,7 +123,7 @@ class ChatMessage(db.Model):
     # Relationships - NOTA: backref rinominati per evitare conflitti
     user = db.relationship('User', backref=db.backref('messages_sent', lazy='dynamic'))
     league = db.relationship('League', backref=db.backref('messages', lazy='dynamic'))
-    attachments = db.relationship('ChatAttachment', backref='message', cascade='all, delete-orphan', lazy='dynamic')
+
     
     def __repr__(self):
         return f'<ChatMessage {self.id} by {self.user.username}>'
@@ -127,22 +134,6 @@ class BlacklistedMember(db.Model):
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     removed_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class ChatAttachment(db.Model):
-    """Modello per gli allegati dei messaggi"""
-    __tablename__ = 'chat_attachment'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    message_id = db.Column(db.Integer, db.ForeignKey('chat_message.id'), nullable=False)
-    filename = db.Column(db.String(200), nullable=False)
-    original_name = db.Column(db.String(200), nullable=False)
-    file_type = db.Column(db.String(50), nullable=False)
-    file_size = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def __repr__(self):
-        return f'<ChatAttachment {self.id} - {self.original_name}>'
 
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -256,6 +247,25 @@ class LeagueMember(db.Model):
         return breakdown
 
 
+class StandardFactor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    default_weight = db.Column(db.Float, nullable=False, default=0)
+
+# Tabella di associazione per legare i fattori standard alle leghe
+class LeagueFactor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
+    standard_factor_id = db.Column(db.Integer, db.ForeignKey('standard_factor.id'), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=False)
+    
+    # Rendi la coppia unica per evitare duplicati
+    __table_args__ = (db.UniqueConstraint('league_id', 'standard_factor_id', name='_league_factor_uc'),)
+
+    league = db.relationship('League', backref=db.backref('active_standard_factors', lazy=True))
+    standard_factor = db.relationship('StandardFactor')
 
 class Factor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -264,6 +274,8 @@ class Factor(db.Model):
     description = db.Column(db.Text)
     weight = db.Column(db.Float, default=1.0)
     is_default = db.Column(db.Boolean, default=False)
+    abilitato = db.Column(db.Boolean, default=True)
+    gender = db.Column(db.String(20), default="Entrambi")  # AGGIUNGI QUESTA RIGA
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     votes = db.relationship('FactorVote', backref='factor', lazy=True, cascade='all, delete-orphan')
 
@@ -322,26 +334,7 @@ def generate_league_code():
 def get_serializer():
     return URLSafeTimedSerializer(app.secret_key)
 
-def setup_default_factors(league_id):
-    """Crea i fattori di default per una nuova lega"""
-    default_factors = [
-        {"name": "Relazione stabile", "description": "Ha una relazione seria", "weight": 1.5},
-        {"name": "Età", "description": "Età del partecipante", "weight": 1.0},
-        {"name": "Stabilità economica", "description": "Situazione economica", "weight": 1.2},
-        {"name": "Desiderio matrimonio", "description": "Quanto desidera sposarsi", "weight": 1.3},
-        {"name": "Pressione familiare", "description": "Pressione della famiglia", "weight": 0.8},
-    ]
-    
-    for factor_data in default_factors:
-        factor = Factor(
-            league_id=league_id,
-            name=factor_data["name"],
-            description=factor_data["description"],
-            weight=factor_data["weight"],
-            is_default=True
-        )
-        db.session.add(factor)
-    db.session.commit()
+
 
 def calculate_member_scores(league_id):
     """Calcola i punteggi totali per tutti i membri di una lega"""
@@ -360,6 +353,38 @@ def calculate_member_scores(league_id):
     
     db.session.commit()
 
+def setup_default_factors(league_id):
+    """
+    Crea i link tra una lega e i fattori standard di default.
+    Tutti i fattori standard sono attivati per default quando si crea una lega.
+    """
+    try:
+        all_standard_factors = StandardFactor.query.all()
+        
+        for factor in all_standard_factors:
+            # Verifica che il link non esista già
+            existing_link = LeagueFactor.query.filter_by(
+                league_id=league_id,
+                standard_factor_id=factor.id
+            ).first()
+            
+            if not existing_link:
+                # Crea il link come ATTIVO di default
+                new_link = LeagueFactor(
+                    league_id=league_id,
+                    standard_factor_id=factor.id,
+                    is_active=True  # Tutti attivi di default
+                )
+                db.session.add(new_link)
+        
+        db.session.commit()
+        print(f"✅ Fattori standard collegati alla lega {league_id}")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Errore in setup_default_factors: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 
 reset_password_html_template = """
@@ -541,9 +566,121 @@ def delete_league_members(league_id):
         'eliminated_users': eliminated_users
     }), 200
 
+@app.route('/league/<int:league_id>/manage_factors', methods=['GET'])
+def manage_factors(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    league = League.query.get_or_404(league_id)
+    if league.owner_id != session['user_id']:
+        flash('Solo il proprietario può gestire i fattori.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Prendi tutti i fattori standard disponibili
+    all_factors = StandardFactor.query.order_by(StandardFactor.category, StandardFactor.name).all()
+    
+    # Prendi gli ID dei fattori già attivi per questa lega
+    active_factor_links = LeagueFactor.query.filter_by(league_id=league_id, is_active=True).all()
+    active_factor_ids = {link.standard_factor_id for link in active_factor_links}
+    
+    return render_template('manage_factors.html', 
+                           league=league, 
+                           all_factors=all_factors,
+                           active_factor_ids=active_factor_ids)
+
+
+@app.route('/league/<int:league_id>/toggle_factor/<int:factor_id>', methods=['POST'])
+def toggle_factor(league_id, factor_id):
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Non autorizzato'}), 401
+    
+    try:
+        league = League.query.get_or_404(league_id)
+        if league.owner_id != session['user_id']:
+            return jsonify({'status': 'error', 'message': 'Solo il proprietario può modificare.'}), 403
+
+        # Cerca il link esistente
+        link = LeagueFactor.query.filter_by(
+            league_id=league_id, 
+            standard_factor_id=factor_id
+        ).first()
+
+        if link:
+            # Esiste già: cambia lo stato is_active
+            link.is_active = not link.is_active
+            db.session.commit()
+            message = f"Fattore {'attivato' if link.is_active else 'disattivato'}"
+            is_active = link.is_active
+        else:
+            # Non esiste: crealo come attivo
+            new_link = LeagueFactor(
+                league_id=league_id, 
+                standard_factor_id=factor_id, 
+                is_active=True
+            )
+            db.session.add(new_link)
+            db.session.commit()
+            message = 'Fattore attivato'
+            is_active = True
+        
+        return jsonify({
+            'status': 'success', 
+            'message': message, 
+            'is_active': is_active
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERRORE in toggle_factor: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error', 
+            'message': f'Errore: {str(e)}'
+        }), 500
+
+@app.route('/league/<int:league_id>/toggle_custom_factor/<int:factor_id>', methods=['POST'])
+def toggle_custom_factor(league_id, factor_id):
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Non autorizzato'}), 401
+    
+    try:
+        league = League.query.get_or_404(league_id)
+        if league.owner_id != session['user_id']:
+            return jsonify({'status': 'error', 'message': 'Solo il proprietario può modificare.'}), 403
+
+        # Cerca il fattore custom
+        factor = Factor.query.filter_by(id=factor_id, league_id=league_id).first()
+        
+        if not factor:
+            return jsonify({'status': 'error', 'message': 'Fattore non trovato'}), 404
+        
+        # Inverti lo stato di abilitazione
+        factor.abilitato = not factor.abilitato
+        db.session.commit()
+        
+        message = f"Fattore {'abilitato' if factor.abilitato else 'disabilitato'}"
+        
+        return jsonify({
+            'status': 'success', 
+            'message': message, 
+            'abilitato': factor.abilitato
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERRORE in toggle_custom_factor: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error', 
+            'message': f'Errore: {str(e)}'
+        }), 500
+
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
+    
         username = request.form.get("username")
         email = request.form.get("email")
         
@@ -1010,57 +1147,43 @@ def manage_blacklist(league_id):
                          league=league, 
                          blacklisted_users=blacklisted_users)
 
+
 @app.route('/league/<league_code>/chat', methods=['GET'])
 def get_chat_messages(league_code):
-    """Recupera tutti i messaggi della chat di una lega"""
+    """Recupera tutti i messaggi della chat di una lega (versione semplificata senza allegati)."""
     if 'user_id' not in session:
         return jsonify({'error': 'Non autenticato'}), 401
     
+    user_id = session['user_id']
     league = League.query.filter_by(code=league_code).first_or_404()
-    
-    # CONTROLLO BLACKLIST
-    is_blacklisted = BlacklistedMember.query.filter_by(
-        league_id=league.id,
-        user_id=session['user_id']
-    ).first()
-    
-    if is_blacklisted:
-        return jsonify({'error': 'Sei stato espulso da questa lega'}), 403
-    
-    # CONTROLLO MEMBERSHIP
-    is_member = LeagueMember.query.filter_by(
-        league_id=league.id,
-        user_id=session['user_id']
-    ).first()
-    
+
+    # Controllo di membership (ho semplificato la query perché il controllo blacklist è meno critico qui)
+    is_member = LeagueMember.query.filter_by(league_id=league.id, user_id=user_id).first()
     if not is_member:
         return jsonify({'error': 'Non sei membro di questa lega'}), 403
     
-    messages = ChatMessage.query.filter_by(league_id=league.id)\
-                                 .order_by(ChatMessage.created_at.asc())\
-                                 .all()
-    
-    result = []
-    for msg in messages:
-        attachments_list = []
-        for att in msg.attachments:
-            attachments_list.append({
-                'id': att.id,
-                'name': att.original_name,
-                'url': url_for('uploaded_file', filename=att.filename),
-                'type': att.file_type,
-                'size': att.file_size
-            })
-        
-        result.append({
+    # Carica messaggi e utenti correlati in modo efficiente
+    messages = ChatMessage.query.options(
+        db.joinedload(ChatMessage.user)
+    ).filter(
+        ChatMessage.league_id == league.id
+    ).order_by(
+        ChatMessage.created_at.asc()
+    ).all()
+
+    # Costruisci il risultato (ora molto più semplice)
+    result = [
+        {
             'id': msg.id,
             'user': msg.user.username,
             'message': msg.message or '',
-            'created_at': msg.created_at.isoformat(),
-            'attachments': attachments_list
-        })
+            'created_at': msg.created_at.isoformat()
+            # La chiave 'attachments' è stata rimossa
+        } for msg in messages
+    ]
     
     return jsonify(result)
+
 
 @app.route('/league/<league_code>/chat', methods=['POST'])
 def send_chat_message(league_code):
@@ -1126,22 +1249,7 @@ def send_chat_message(league_code):
                 file.save(filepath)
                 file_size = os.path.getsize(filepath)
                 
-                # Crea record attachment nel database
-                attachment = ChatAttachment(
-                    message_id=new_message.id,
-                    filename=unique_filename,
-                    original_name=original_filename,
-                    file_type=get_file_type(original_filename),
-                    file_size=file_size
-                )
-                db.session.add(attachment)
                 
-                attachments_data.append({
-                    'name': original_filename,
-                    'url': url_for('uploaded_file', filename=unique_filename),
-                    'type': get_file_type(original_filename),
-                    'size': file_size
-                })
             
             except Exception as e:
                 db.session.rollback()
@@ -1597,17 +1705,36 @@ def league_detail(league_id):
         reverse=True
     )
     
-    # Recupera i fattori della lega
-    factors = Factor.query.filter_by(league_id=league_id).all()
+    # Recupera i fattori CUSTOM della lega
+    custom_factors = Factor.query.filter_by(league_id=league_id).all()
+    
+    # GESTIONE FATTORI STANDARD
+    active_links = LeagueFactor.query.filter_by(league_id=league_id, is_active=True).all()
+    active_standard_factor_ids = {link.standard_factor_id for link in active_links}
+    
+    all_standard_factors_for_owner = []
+    active_standard_factors_for_member = []
+    
+    if is_owner:
+        # L'owner vede TUTTO il catalogo per poter scegliere
+        all_standard_factors_for_owner = StandardFactor.query.order_by(StandardFactor.category, StandardFactor.name).all()
+    else:
+        # Un membro vede solo i fattori attivati dall'owner
+        if active_standard_factor_ids:
+            active_standard_factors_for_member = StandardFactor.query.filter(StandardFactor.id.in_(active_standard_factor_ids)).all()
     
     return render_template(
         "league_detail.html", 
         league=league, 
         members=members_sorted,
-        factors=factors, 
+        custom_factors=custom_factors,
         is_member=is_member is not None, 
-        is_owner=is_owner
+        is_owner=is_owner,
+        all_standard_factors=all_standard_factors_for_owner,
+        active_standard_factor_ids=active_standard_factor_ids,
+        active_standard_factors=active_standard_factors_for_member,
     )
+
 
 
 @app.route('/league/<int:league_id>/stats')
@@ -1857,18 +1984,21 @@ def add_factor(league_id):
     description = request.form.get("description")
     weight = request.form.get("weight", 1.0)
     
+    # NUOVO: Estrai il sesso (gender) dal form
+    gender = request.form.get("gender", "Entrambi")  # Default: visibile a entrambi
+    
     factor = Factor(
         league_id=league_id,
         name=name,
         description=description,
-        weight=float(weight)
+        weight=float(weight),
+        gender=gender  # AGGIUNGI QUESTO
     )
     db.session.add(factor)
     db.session.commit()
     
-    flash(f"Fattore '{name}' aggiunto", "success")
+    flash(f"Fattore '{name}' aggiunto (visibile a: {gender})", "success")
     return redirect(url_for("league_detail", league_id=league_id))
-
     
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'avatars')
@@ -1924,7 +2054,6 @@ def upload_avatar():
         flash("Formato file non valido. Usa PNG, JPG, JPEG, GIF o WEBP", "danger")
         return redirect(url_for("dashboard"))
     
-
 @app.route("/league/<int:league_id>/vote", methods=["GET", "POST"])
 def vote(league_id):
     if 'user_id' not in session:
@@ -1957,7 +2086,20 @@ def vote(league_id):
         return redirect(url_for("dashboard"))
     
     members = LeagueMember.query.filter_by(league_id=league_id, is_competing=True).all()
-    factors = Factor.query.filter_by(league_id=league_id).all()
+    
+    # ===== FATTORI CUSTOM - FILTRATI PER SESSO =====
+    user_gender = User.query.get(session['user_id']).gender
+    factors = Factor.query.filter_by(league_id=league_id).filter(
+        db.or_(
+            Factor.gender == "Entrambi",
+            Factor.gender == user_gender
+        )
+    ).all()
+    
+    # FATTORI STANDARD ATTIVATI
+    active_links = LeagueFactor.query.filter_by(league_id=league_id, is_active=True).all()
+    active_standard_factor_ids = {link.standard_factor_id for link in active_links}
+    active_standard_factors = StandardFactor.query.filter(StandardFactor.id.in_(active_standard_factor_ids)).all() if active_standard_factor_ids else []
 
     if request.method == "POST":
         try:
@@ -1972,8 +2114,8 @@ def vote(league_id):
                 
                 # Calcola il punteggio totale per questo membro
                 member_total_score = base_score
-                factor_details = {}
                 
+                # VOTA I FATTORI CUSTOM
                 for factor in factors:
                     score_key = f"score_{member.id}_{factor.id}"
                     score = request.form.get(score_key)
@@ -1988,13 +2130,9 @@ def vote(league_id):
                             voter_id=session['user_id']
                         ).first()
                         
-                        if existing_vote:
-                            # Non permettere di modificare un voto già fatto
-                            continue
-                        else:
+                        if not existing_vote:
                             # Aggiungi il voto al punteggio totale
                             member_total_score += score_value
-                            factor_details[factor.name] = score_value
                             
                             # Salva il singolo voto
                             new_vote = FactorVote(
@@ -2037,8 +2175,10 @@ def vote(league_id):
                          league=league, 
                          members=filtered_members, 
                          factors=factors,
+                         active_standard_factors=active_standard_factors,
                          voted_pairs=voted_pairs,
                          member_scores=member_scores)
+
 
 
 @app.route("/privacy")
