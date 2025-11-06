@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
+  "version": "1.1",
   "name": "FantaMatrimonio",
   "short_name": "FantaMatrimonio",
   "icons": [
@@ -23,7 +23,7 @@
     }
   ],
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#ffffff"
 }

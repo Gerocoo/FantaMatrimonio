@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fantamatrimonio-v10-' + new Date().getTime();
+const CACHE_NAME = 'fantamatrimonio-v11-' + new Date().getTime();
 const STATIC_CACHE = [
   '/static/default.png',
   '/static/bkground.jpg',
@@ -40,7 +40,10 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(event.request));
     return;
   }
-  
+  self.addEventListener('activate', event => {
+  event.waitUntil(clients.claim());
+});
+
   // Cache First per risorse statiche
   event.respondWith(
     caches.match(event.request)
