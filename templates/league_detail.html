@@ -23,7 +23,7 @@
   
   <!-- PERCORSO GARA -->
   <div style="position: relative; margin: 2rem 0; padding: 1rem 1rem 0.5rem 1rem;">
-    <div style="position: absolute; top: 85%; left: 60px; right: 60px; height: 4px; background: linear-gradient(to right, #4CAF50, #E145A3, #f44336); z-index: 1;"></div>
+    <div style="position: absolute; top: 85%; left: 60px; right: 60px; height: 4px; background: linear-gradient(to right, #fdadf0, #E145A3, #f44336); z-index: 1;"></div>
     
     <div style="position: absolute; left: 0; top: 85%; transform: translateY(-50%); text-align: center; z-index: 5;">
       <div style="font-size: 2rem; margin-bottom: 0.3rem;">🚩</div>
@@ -36,14 +36,13 @@
     </div>
     
     <!-- CONTAINER AVATAR -->
-    <div style="position: relative; height: 100px; margin: 0 60px;">
+    <div style="position: relative; height: 200px; margin: 0 60px;">
       {% if members %}
         {% for member in members %}
-          <div class="avatar-member avatar-{{ member.id }}" data-member-id="{{ member.id }}" data-member-score="{{ member.calculated_total_score }}" style="position: absolute; left: 0; z-index: 3; transform: translateX(-50%); transition: left 0.5s ease; text-align: center; top: {{ (member.id * 67) % 130 }}px;">
-            
-            <p style="font-size: 0.7rem; color: #333; font-weight: 600; margin: 0 0 -3px 0; white-space: nowrap; background: rgba(255, 255, 255, 0.8); padding: 2px 8px; border-radius: 12px; display: inline-block;">{{ member.name }}</p>
-
-            
+          <div class="avatar-member avatar-{{ member.id }}" 
+               data-member-id="{{ member.id }}" 
+               data-member-score="{{ member.calculated_total_score }}" 
+               style="position: absolute; left: 0; z-index: 3; transform: translateX(-50%); transition: top 0.5s ease, left 0.5s ease; text-align: center;">
             <div style="width: 50px; height: 50px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: {{ member.user_color }}; border-radius: 50%; color: white; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 3px solid white;">
               {{ member.name[0].upper() }}
             </div>
@@ -52,21 +51,41 @@
       {% endif %}
     </div>
     
-   <div style="position: absolute; top: 90%; left: 60px; right: 60px; height: 0; z-index: 2; ">
-  {% if members %}
-    {% for member in members %}
-      <div class="score-display score-{{ member.id }}" 
-           data-member-id="{{ member.id }}" 
-           data-member-score="{{ member.calculated_total_score }}" 
-           style="position: absolute; align-items: start; left: 0; top: 15px; transform: translateX(-50%) rotate(90deg); transform-origin: center center; transition: left 0.5s ease; white-space: nowrap;">
-        <p style="font-size: 0.7rem; font-weight: bold; margin: 0; color: {{ member.user_color }}; background: rgba(255,255,255,0.95); padding: 2px 7px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">{{ "%.1f"|format(member.calculated_total_score) }}</p>
-      </div>
-    {% endfor %}
-  {% endif %}
-</div>
-  <div style="margin-top: 2rem; padding-top: 2.5rem; text-align: center;">
+    <!-- CONTAINER NOMI -->
+    <div style="position: absolute; top: 75%; left: 60px; right: 60px; height: 0; z-index: 2;">
+      {% if members %}
+        {% for member in members %}
+          <div class="name-display name-{{ member.id }}" style="position: absolute; left: 0; top: -45px; transform: translateX(-50%) rotate(90deg); transition: left 0.5s ease; white-space: nowrap;">
+            <p style="font-size: 0.7rem; font-weight: 600; margin: 0; color: #333; background: rgba(255,255,255,0.9); padding: 3px 8px; border-radius: 8px;">{{ member.name }}</p>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
     
+    <!-- CONTAINER LINEE -->
+    <div style="position: absolute; top: -60px; left: 60px; right: 60px; height: 300px; z-index: 0; pointer-events: none;">
+      {% if members %}
+        {% for member in members %}
+          <svg class="line-svg line-{{ member.id }}" data-member-id="{{ member.id }}" style="position: absolute; left: 0; top: 100; width: 100%; height: 100%; overflow: visible; transition: left 0.5s ease, height 0.5s ease, top 0.5s ease;">
+            <line class="connector-line" x1="0" y1="0" x2="0" y2="100" style="stroke: {{ member.user_color }}; stroke-width: 3; stroke-linecap: round;"/>
+          </svg>
+        {% endfor %}
+      {% endif %}
+    </div>
+    
+    <!-- CONTAINER PUNTEGGI -->
+    <div style="position: absolute; top: 85%; left: 60px; right: 60px; height: 0; z-index: 2;">
+      {% if members %}
+        {% for member in members %}
+          <div class="score-display score-{{ member.id }}" style="position: absolute; left: 0; top: 15px; transform: translateX(-50%) rotate(90deg); transform-origin: center center; transition: top 0.5s ease, left 0.5s ease; white-space: nowrap;">
+            <p style="font-size: 0.7rem; font-weight: bold; margin: 0; color: {{ member.user_color }}; background: rgba(255,255,255,0.95); padding: 2px 7px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">{{ "%.1f"|format(member.calculated_total_score) }}</p>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
   </div>
+  
+  <div style="margin-top: 2rem; padding-top: 2.5rem; text-align: center;"></div>
 </div>
 
 <script>
@@ -104,20 +123,89 @@ function updateVotingTimeline() {
     }
     
     const timeProgressPercent = (timeElapsed / totalDuration) * 100;
+    const avatars = Array.from(document.querySelectorAll('.avatar-member'));
+    avatars.sort((a, b) => parseFloat(b.dataset.memberScore) - parseFloat(a.dataset.memberScore));
     
-    document.querySelectorAll('.avatar-member').forEach(avatarEl => {
+    const avatarTopHigh = -30;
+    const avatarTopNormal = 20;
+    const scoreThreshold = 100;
+    const scoreTopHigh = 55;
+    const scoreTopNormal = 20;
+    const positionOffset = 2.6;
+    
+    let lastPosition = 'normal';
+    
+    avatars.forEach((avatarEl, index) => {
       const memberId = avatarEl.dataset.memberId;
       const memberScore = parseFloat(avatarEl.dataset.memberScore);
+      
       const basePosition = (memberScore / maxPossibleScore * 90) + 5;
       const bonusFromTime = (timeProgressPercent / 100) * 5;
       const finalPosition = basePosition + bonusFromTime;
       
       avatarEl.style.left = finalPosition + '%';
       
+      let currentPosition = 'normal';
+      
+      if (index === 0) {
+        avatarEl.style.setProperty('top', avatarTopNormal + 'px', 'important');
+        currentPosition = 'normal';
+      } else {
+        const previousScore = parseFloat(avatars[index - 1].dataset.memberScore);
+        const scoreDiff = Math.abs(previousScore - memberScore);
+        
+        if (lastPosition === 'high') {
+          avatarEl.style.setProperty('top', avatarTopNormal + 'px', 'important');
+          currentPosition = 'normal';
+        } else {
+          if (scoreDiff <= scoreThreshold) {
+            avatarEl.style.setProperty('top', avatarTopHigh + 'px', 'important');
+            currentPosition = 'high';
+          } else {
+            avatarEl.style.setProperty('top', avatarTopNormal + 'px', 'important');
+            currentPosition = 'normal';
+          }
+        }
+      }
+      
+      lastPosition = currentPosition;
+      
       const scoreEl = document.querySelector(`.score-${memberId}`);
       if (scoreEl) {
-        scoreEl.style.left = finalPosition +2.8 + '%';
+        scoreEl.style.left = (finalPosition + positionOffset) + '%';
+        const scoreTopValue = (currentPosition === 'high') ? scoreTopHigh : scoreTopNormal;
+        scoreEl.style.top = scoreTopValue + 'px';
       }
+      
+      const nameEl = document.querySelector(`.name-${memberId}`);
+      if (nameEl) {
+        nameEl.style.left = (finalPosition + positionOffset) + '%';
+      }
+      
+    const lineSvg = document.querySelector(`.line-${memberId}`);
+if (lineSvg) {
+  lineSvg.style.left = finalPosition+ 2.4 + '%';
+  
+  // Calcola l'altezza della linea dinamicamente
+  let lineHeight = 0;
+  let lineTop = 0;
+  
+  if (currentPosition === 'high') {
+    // Avatar è in alto (-30px), linea PIÙ LUNGA
+    lineHeight = 270;  // Da avatar (50px) fino a punteggio (220px total)
+    lineTop = avatarTopHigh - 10;  // Inizia sopra l'avatar
+  } else {
+    // Avatar è normale (20px), linea standard
+    lineHeight = 190;  // Più corta
+    lineTop = avatarTopNormal - 10;
+  }
+  
+  lineSvg.style.top = lineTop+100 + 'px';
+  const line = lineSvg.querySelector('.connector-line');
+  if (line) {
+    line.setAttribute('y2', lineHeight);
+  }
+}
     });
   }
   
