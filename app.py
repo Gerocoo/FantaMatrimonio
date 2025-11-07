@@ -23,10 +23,69 @@ from google.auth.transport import requests as google_requests
 from flask import send_from_directory
 import time
 from datetime import datetime
+from pywebpush import webpush, WebPushException
+import json
+from py_vapid import Vapid
+from pywebpush import webpush, WebPushException
+import json
+import os
 
+# Caricamento VAPID da file
+VAPID_FILE = 'vapid_private.pem'
+VAPID_CLAIMS = {"sub": "mailto:admin@therealfantamatrimonio.it"}
 
+if os.path.exists(VAPID_FILE):
+    vapid_instance = Vapid.from_file(VAPID_FILE)
+    print("✅ Chiavi VAPID caricate da", VAPID_FILE)
+else:
+    vapid_instance = None
+    print("❌ File", VAPID_FILE, "non trovato!")
 
-
+def send_push_notification(user_id, title, body, url, tag='default'):
+    """Invia notifica push"""
+    if not vapid_instance:
+        print("⚠️ VAPID non inizializzato")
+        return
+    
+    subscriptions = PushSubscription.query.filter_by(
+        user_id=user_id, 
+        is_active=True
+    ).all()
+    
+    if not subscriptions:
+        print(f"ℹ️ Nessuna subscription per user {user_id}")
+        return
+    
+    payload = json.dumps({
+        'title': title,
+        'body': body,
+        'url': url,
+        'tag': tag,
+        'icon': '/static/images/icon-192.png',
+        'badge': '/static/images/badge-72.png'
+    })
+    
+    for sub in subscriptions:
+        try:
+            subscription_info = json.loads(sub.subscription_info)
+            
+            webpush(
+                subscription_info=subscription_info,
+                data=payload,
+                vapid_private_key=vapid_instance,
+                vapid_claims=VAPID_CLAIMS
+            )
+            
+            print(f"✅ Notifica inviata a user {user_id}")
+            
+        except WebPushException as e:
+            print(f"❌ WebPush error: {e}")
+            if e.response and e.response.status_code == 410:
+                sub.is_active = False
+                db.session.commit()
+                
+        except Exception as e:
+            print(f"❌ Errore: {e}")
 
 
 
@@ -260,7 +319,22 @@ class LeagueMember(db.Model):
         
         return breakdown
 
-
+class PushSubscription(db.Model):
+    """Model per salvare le subscription push dei browser"""
+    __tablename__ = 'push_subscription'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subscription_info = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relazione con User
+    user = db.relationship('User', backref=db.backref('push_subscriptions', lazy=True))
+    
+    def __repr__(self):
+        return f'<PushSubscription user_id={self.user_id}>'
+    
 class StandardFactor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -522,63 +596,326 @@ def send_reset_password_email(user_email, username, reset_url):
 
 @app.route('/league/<int:league_id>/leave', methods=['POST'])
 def leave_league(league_id):
+    """Lascia una lega e notifica l'owner"""
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
-    league = League.query.get_or_404(league_id)
-    member = LeagueMember.query.filter_by(league_id=league_id, user_id=session['user_id']).first_or_404()
+    try:
+        league = League.query.get_or_404(league_id)
+        member = LeagueMember.query.filter_by(
+            league_id=league_id, 
+            user_id=session['user_id']
+        ).first_or_404()
+        
+        if league.owner_id == session['user_id']:
+            return jsonify({'error': 'Non puoi uscire dalla lega di cui sei admin!'}), 403
+        
+        user = User.query.get(session['user_id'])
+        
+        # Rimuovi il membro
+        db.session.delete(member)
+        db.session.commit()
+        
+        # Invia notifica (non bloccante)
+        try:
+            send_push_notification(
+                user_id=league.owner_id,
+                title=f"👋 {league.name}",
+                body=f"{user.username} ha lasciato la lega",
+                url=f"/league/{league.id}",
+                tag=f"leave-{league.id}-{user.id}"
+            )
+        except Exception as notif_error:
+            print(f"⚠️ Notifica non inviata: {notif_error}")
+        
+        flash(f'Sei uscito dalla lega {league.name}!', 'success')
+        return jsonify({'status': 'success'})
     
-    if league.owner_id == session['user_id']:
-        return jsonify({'error': 'Non puoi uscire dalla lega di cui sei admin!'}), 403
-    
-    db.session.delete(member)
-    db.session.commit()
-    
-    flash(f'Sei uscito dalla lega {league.name}!', 'success')
-    return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Errore in leave_league: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/league/<int:league_id>/delete_members', methods=['POST'])
 def delete_league_members(league_id):
+    """Elimina membri dalla lega, li mette in blacklist e li notifica"""
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
-    league = League.query.get_or_404(league_id)
-    
-    if league.owner_id != session['user_id']:
-        return jsonify({'status': 'error', 'message': 'Solo il creatore può eliminare i membri'}), 403
-    
-    member_ids = request.json.get('member_ids', [])
-    
-    if not member_ids:
-        return jsonify({'status': 'error', 'message': 'Nessun membro selezionato'}), 400
-    
-    eliminated_users = []
-    
-    for member_id in member_ids:
-        member = LeagueMember.query.filter_by(id=member_id, league_id=league_id).first()
+    try:
+        league = League.query.get_or_404(league_id)
         
-        if member and member.user_id != league.owner_id:
-            blacklisted = BlacklistedMember(league_id=league_id, user_id=member.user_id)
-            db.session.add(blacklisted)
-            db.session.delete(member)
-            eliminated_users.append(member.user_id)
-        elif member and member.user_id == league.owner_id:
-            return jsonify({'status': 'error', 'message': 'Non puoi eliminare il creatore della lega'}), 403
+        if league.owner_id != session['user_id']:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Solo il creatore può eliminare i membri'
+            }), 403
+        
+        member_ids = request.json.get('member_ids', [])
+        
+        if not member_ids:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Nessun membro selezionato'
+            }), 400
+        
+        eliminated_users = []
+        eliminated_usernames = []
+        
+        for member_id in member_ids:
+            member = LeagueMember.query.filter_by(
+                id=member_id, 
+                league_id=league_id
+            ).first()
+            
+            if member and member.user_id != league.owner_id:
+                user = User.query.get(member.user_id)
+                
+                # =============================================================
+                # ELIMINA TUTTI I VOTI ASSOCIATI AL MEMBRO
+                # =============================================================
+                try:
+                    # Elimina voti RICEVUTI dal membro (member_id)
+                    votes_received = FactorVote.query.filter_by(
+                        member_id=member.id
+                    ).all()
+                    for vote in votes_received:
+                        db.session.delete(vote)
+                    
+                    # Elimina voti DATI dall'utente (user_id)
+                    votes_given = FactorVote.query.filter_by(
+                        user_id=member.user_id,
+                        league_id=league_id
+                    ).all()
+                    for vote in votes_given:
+                        db.session.delete(vote)
+                    
+                    print(f"🗑️ Eliminati {len(votes_received)} voti ricevuti e {len(votes_given)} voti dati per member {member.id}")
+                
+                except Exception as vote_error:
+                    print(f"⚠️ Errore eliminazione voti per member {member.id}: {vote_error}")
+                
+                # Aggiungi alla blacklist
+                blacklisted = BlacklistedMember(
+                    league_id=league_id, 
+                    user_id=member.user_id
+                )
+                db.session.add(blacklisted)
+                
+                # Rimuovi dalla lega
+                db.session.delete(member)
+                
+                eliminated_users.append(member.user_id)
+                eliminated_usernames.append(user.username if user else "Unknown")
+            
+            elif member and member.user_id == league.owner_id:
+                db.session.rollback()
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Non puoi eliminare il creatore della lega'
+                }), 403
+        
+        # COMMIT delle modifiche al database
+        db.session.commit()
+        print(f"✅ {len(eliminated_users)} membri rimossi dalla lega {league.id}")
+        
+        # Ricalcola punteggi (dopo aver eliminato i voti)
+        try:
+            calculate_member_scores(league_id)
+            print(f"✅ Punteggi ricalcolati per lega {league.id}")
+        except Exception as calc_error:
+            print(f"⚠️ Errore calcolo punteggi: {calc_error}")
+        
+        # Imposta messaggio flash
+        for user_id in eliminated_users:
+            if user_id == session.get('user_id'):
+                session['expelled_from'] = league.name
+        
+        # Notifiche push (non bloccanti)
+        for user_id in eliminated_users:
+            try:
+                send_push_notification(
+                    user_id=user_id,
+                    title=f"⛔ {league.name}",
+                    body="Sei stato rimosso dalla lega dall'amministratore",
+                    url="/dashboard",
+                    tag=f"kick-{league.id}-{user_id}"
+                )
+            except Exception as notif_error:
+                print(f"⚠️ Notifica non inviata: {notif_error}")
+        
+        # Notifica altri membri (opzionale)
+        if eliminated_usernames:
+            try:
+                remaining_members = LeagueMember.query.filter_by(league_id=league_id).all()
+                kicked_names = ", ".join(eliminated_usernames[:3])
+                if len(eliminated_usernames) > 3:
+                    kicked_names += f" e altri {len(eliminated_usernames) - 3}"
+                
+                for remaining_member in remaining_members:
+                    if remaining_member.user_id != league.owner_id:
+                        try:
+                            send_push_notification(
+                                user_id=remaining_member.user_id,
+                                title=f"ℹ️ {league.name}",
+                                body=f"{kicked_names} è stato rimosso dalla lega",
+                                url=f"/league/{league.id}",
+                                tag=f"member-removed-{league.id}"
+                            )
+                        except:
+                            pass
+            except:
+                pass
+        
+        return jsonify({
+            'status': 'success', 
+            'message': f'{len(member_ids)} membro/i eliminato/i',
+            'eliminated_users': eliminated_users
+        }), 200
     
-    db.session.commit()
-    calculate_member_scores(league_id)
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Errore critico in delete_league_members: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': f'Errore: {str(e)}'
+        }), 500
+
+
+@app.route('/test-push')
+def test_push():
+    """Route per testare le notifiche push"""
+    if 'user_id' not in session:
+        return "⛔ Devi essere loggato", 401
     
-    # Imposta un messaggio flash per gli utenti espulsi
-    for user_id in eliminated_users:
-        if user_id == session.get('user_id'):
-            session['expelled_from'] = league.name
+    user_id = session['user_id']
+    user = User.query.get(user_id)
     
-    return jsonify({
-        'status': 'success', 
-        'message': f'{len(member_ids)} membro/i eliminato/i',
-        'eliminated_users': eliminated_users
-    }), 200
+    # Test 1: Notifica base
+    send_push_notification(
+        user_id=user_id,
+        title="🧪 Test Notifica Base",
+        body="Questa è una notifica di test! Se la vedi, funziona!",
+        url="/dashboard",
+        tag="test-basic"
+    )
+    
+    return f"""
+    <h1>✅ Notifica inviata a {user.username}!</h1>
+    <p>Controlla il browser per vedere la notifica.</p>
+    <br>
+    <a href="/dashboard">Torna alla Dashboard</a>
+    """
+
+@app.route('/test-push-all')
+def test_push_all():
+    """Testa diversi tipi di notifiche"""
+    if 'user_id' not in session:
+        return "⛔ Devi essere loggato", 401
+    
+    user_id = session['user_id']
+    
+    # Test vari tipi di notifiche
+    notifications = [
+        {
+            'title': '💬 Test Chat',
+            'body': 'Mario: Ciao! Come va?',
+            'url': '/dashboard',
+            'tag': 'test-chat'
+        },
+        {
+            'title': '🎉 Test Join',
+            'body': 'Luigi si è unito alla lega!',
+            'url': '/dashboard',
+            'tag': 'test-join'
+        },
+        {
+            'title': '👋 Test Leave',
+            'body': 'Peach ha lasciato la lega',
+            'url': '/dashboard',
+            'tag': 'test-leave'
+        },
+        {
+            'title': '⛔ Test Kick',
+            'body': 'Sei stato rimosso dalla lega dall\'amministratore',
+            'url': '/dashboard',
+            'tag': 'test-kick'
+        }
+    ]
+    
+    for notif in notifications:
+        send_push_notification(
+            user_id=user_id,
+            title=notif['title'],
+            body=notif['body'],
+            url=notif['url'],
+            tag=notif['tag']
+        )
+        # Piccolo delay per non sovrapporle
+        import time
+        time.sleep(0.5)
+    
+    return f"""
+    <h1>✅ {len(notifications)} notifiche inviate!</h1>
+    <p>Dovresti ricevere 4 notifiche diverse:</p>
+    <ul>
+        <li>💬 Chat</li>
+        <li>🎉 Join</li>
+        <li>👋 Leave</li>
+        <li>⛔ Kick</li>
+    </ul>
+    <br>
+    <a href="/dashboard">Torna alla Dashboard</a>
+    """
+
+
+
+
+from flask import request, jsonify
+import json
+
+# Route per salvare la subscription del browser
+@app.route('/api/push-subscription', methods=['POST'])
+def save_push_subscription():
+    """Salva la subscription push del browser nel database"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Non autenticato'}), 401
+    
+    try:
+        subscription_info = request.json
+        user_id = session['user_id']
+        
+        # Converti subscription in stringa JSON
+        subscription_json = json.dumps(subscription_info)
+        
+        # Verifica se esiste già questa subscription
+        existing = PushSubscription.query.filter_by(
+            user_id=user_id,
+            subscription_info=subscription_json
+        ).first()
+        
+        if not existing:
+            # Crea nuova subscription
+            new_sub = PushSubscription(
+                user_id=user_id,
+                subscription_info=subscription_json,
+                is_active=True
+            )
+            db.session.add(new_sub)
+            db.session.commit()
+            print(f"✅ Subscription salvata per user {user_id}")
+        else:
+            print(f"ℹ️ Subscription già esistente per user {user_id}")
+        
+        return jsonify({'success': True, 'message': 'Subscription salvata'})
+    
+    except Exception as e:
+        print(f"❌ Errore salvataggio subscription: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/league/<int:league_id>/manage_factors', methods=['GET'])
 def manage_factors(league_id):
@@ -1282,7 +1619,7 @@ def get_chat_messages(league_code):
 
 @app.route('/league/<league_code>/chat', methods=['POST'])
 def send_chat_message(league_code):
-    """Invia un nuovo messaggio con eventuali allegati"""
+    """Invia un nuovo messaggio con eventuali allegati e notifiche push"""
     if 'user_id' not in session:
         return jsonify({'error': 'Non autenticato'}), 401
     
@@ -1344,7 +1681,12 @@ def send_chat_message(league_code):
                 file.save(filepath)
                 file_size = os.path.getsize(filepath)
                 
-                
+                # Aggiungi info allegato
+                attachments_data.append({
+                    'name': unique_filename,
+                    'original_name': original_filename,
+                    'size': file_size
+                })
             
             except Exception as e:
                 db.session.rollback()
@@ -1355,6 +1697,39 @@ def send_chat_message(league_code):
     
     try:
         db.session.commit()
+        
+        # =====================================================================
+        # INVIA NOTIFICHE PUSH agli altri membri della lega
+        # =====================================================================
+        sender = User.query.get(session['user_id'])
+        all_members = LeagueMember.query.filter_by(league_id=league.id).all()
+        
+        # Determina il corpo della notifica
+        if message_text:
+            notification_body = f"{sender.username}: {message_text[:50]}"
+            if len(message_text) > 50:
+                notification_body += "..."
+        elif attachments_data:
+            file_count = len(attachments_data)
+            notification_body = f"{sender.username} ha inviato {file_count} file"
+        else:
+            notification_body = f"{sender.username} ha inviato un messaggio"
+        
+        # Invia notifica a tutti tranne il mittente
+        for member in all_members:
+            if member.user_id != session['user_id']:
+                try:
+                    send_push_notification(
+                        user_id=member.user_id,
+                        title=f"💬 {league.name}",
+                        body=notification_body,
+                        url=f"/league/{league.id}",
+                        tag=f"chat-{league.id}-{new_message.id}"
+                    )
+                except Exception as e:
+                    # Log l'errore ma non bloccare la risposta
+                    print(f"❌ Errore invio notifica a user {member.user_id}: {e}")
+        
         return jsonify({
             'status': 'ok',
             'message_id': new_message.id,
@@ -1372,6 +1747,7 @@ def send_chat_message(league_code):
             if os.path.exists(filepath):
                 os.remove(filepath)
         return jsonify({'error': f'Errore nel database: {str(e)}'}), 500
+
     
     
 @app.route('/uploads/<filename>')
@@ -2030,6 +2406,39 @@ def join_league():
         )
         db.session.add(member)
         db.session.commit()
+        
+        # =====================================================================
+        # INVIA NOTIFICHE PUSH a tutti i membri esistenti della lega
+        # =====================================================================
+        existing_members = LeagueMember.query.filter_by(league_id=league.id).all()
+        
+        # Notifica tutti i membri (incluso l'owner) tranne il nuovo arrivato
+        for existing_member in existing_members:
+            if existing_member.user_id != user.id:
+                try:
+                    send_push_notification(
+                        user_id=existing_member.user_id,
+                        title=f"🎉 {league.name}",
+                        body=f"{user.username} si è unito alla lega!",
+                        url=f"/league/{league.id}",
+                        tag=f"join-{league.id}-{user.id}"
+                    )
+                except Exception as e:
+                    # Log l'errore ma non bloccare il join
+                    print(f"❌ Errore invio notifica a user {existing_member.user_id}: {e}")
+        
+        # Notifica speciale per l'owner della lega
+        if league.owner_id != user.id:
+            try:
+                send_push_notification(
+                    user_id=league.owner_id,
+                    title=f"👑 {league.name}",
+                    body=f"Nuovo membro: {user.username} è entrato nella tua lega!",
+                    url=f"/league/{league.id}",
+                    tag=f"join-owner-{league.id}-{user.id}"
+                )
+            except Exception as e:
+                print(f"❌ Errore invio notifica all'owner {league.owner_id}: {e}")
         
         flash(f"Sei entrato nella lega '{league.name}'!", "success")
         return redirect(url_for("league_detail", league_id=league.id))
