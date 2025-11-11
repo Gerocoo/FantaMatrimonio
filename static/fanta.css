@@ -1863,6 +1863,7 @@ textarea#chat-input {
   .ranking-card,
   .factor-card {
     padding: 1.5rem;
+    flex-direction: column;
   }
 }
 
@@ -1931,6 +1932,11 @@ textarea#chat-input {
     font-size: 1.15em;
     margin-top: 10px;
   }
+  .ranking-card {
+    flex-direction: column;
+    
+  }
+  
   table.table-ranking {
   width: 100%;
   max-width: 600px; /* limita la larghezza massima */

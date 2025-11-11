@@ -978,24 +978,30 @@ fetch('/league/' + leagueCode + '/chat')
 updateButtonsVisibility();
 
 function generateMemberButtons() {
-  const memberElements = document.querySelectorAll('[data-member-id]');
-  const membersList = document.getElementById('membersButtonsList');
+  // Escludi avatar dalla timeline
+  const memberElements = document.querySelectorAll('[data-member-id]:not(.avatar-circle):not(.racing-avatar)');
   
+  const membersList = document.getElementById('membersButtonsList');
   membersList.innerHTML = '';
+  
   memberElements.forEach(el => {
     const memberId = el.getAttribute('data-member-id');
     const memberName = el.getAttribute('data-member-name');
     const color = el.getAttribute('data-color');
     
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'member-button';
-    button.textContent = memberName;
-    button.style.borderLeft = '4px solid ' + color;
-    button.onclick = () => openConfirmDelete(memberId, memberName);
-    membersList.appendChild(button);
+    // Controllo sicurezza
+    if (memberName && memberName.trim() !== '') {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'member-button';
+      button.textContent = memberName;
+      button.style.borderLeft = '4px solid ' + color;
+      button.onclick = () => openConfirmDelete(memberId, memberName);
+      membersList.appendChild(button);
+    }
   });
 }
+
 
 function toggleForm(formId) {
   const form = document.getElementById(formId);
