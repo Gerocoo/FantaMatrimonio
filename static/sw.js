@@ -214,3 +214,25 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 });
 
 console.log('🚀 Service Worker caricato');
+self.addEventListener('push', function(event) {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  
+  const options = {
+    body: data.body,
+    icon: data.icon || '/static/images/icon-192.png',  // Icona personalizzata
+    badge: data.badge || '/static/images/badge-72.png', // Badge piccolo
+    vibrate: [200, 100, 200],
+    tag: data.tag || 'default',
+    data: {
+      url: data.url || '/'
+    },
+    requireInteraction: false,
+    silent: false
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
