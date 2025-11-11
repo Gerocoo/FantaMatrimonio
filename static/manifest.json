@@ -3,12 +3,6 @@
   "name": "FantaMatrimonio",
   "short_name": "FantaMatrimonio",
   "icons": [
-     {
-      "src": "/static/icons/background.png",
-      "sizes": "196x196",
-      "type": "image/svg",
-      "purpose": "any"
-    },
     {
       "src": "/static/icon/icon-192.png",
       "sizes": "192x192",
@@ -19,12 +13,6 @@
       "src": "/static/icon/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/static/icons/foreground.png",
-      "sizes": "196x196",
-      "type": "image/svg",
       "purpose": "maskable"
     },
     {
