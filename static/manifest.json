@@ -4,19 +4,19 @@
   "short_name": "FantaMatrimonio",
   "icons": [
      {
-      "src": "/static/icons/background.svg",
+      "src": "/static/icons/background.png",
       "sizes": "196x196",
       "type": "image/svg",
       "purpose": "any"
     },
     {
-      "src": "/static/icons/foreground.svg",
+      "src": "/static/icons/foreground.png",
       "sizes": "196x196",
       "type": "image/svg",
       "purpose": "maskable"
     },
     {
-      "src": "/static/icons/monochrome.svg",
+      "src": "/static/icons/monochrome.png",
       "sizes": "196x196",
       "type": "image/svg",
       "purpose": "monochrome"
