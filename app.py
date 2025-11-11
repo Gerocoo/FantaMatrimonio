@@ -2077,9 +2077,16 @@ def profilo():
                 if os.path.exists(old_path):
                     os.remove(old_path)
 
+            # Aggiorna avatar e timestamp
             user.avatar = f"uploads/avatars/{unique_filename}"
+            user.updated_at = datetime.utcnow()  # ← AGGIUNGI QUESTO
+            
             db.session.commit()
+            
+            # Aggiorna anche la session con timestamp per cache-busting
             session["avatar"] = user.avatar
+            session["avatar_updated"] = int(time.time())  # ← AGGIUNGI QUESTO
+            
             flash("Avatar aggiornato con successo!", "success")
             return redirect(url_for("profilo"))
         else:
@@ -2087,7 +2094,6 @@ def profilo():
             return redirect(url_for("profilo"))
     
     return render_template("profilo.html", user=user)
-
 
 
 # ============================================
