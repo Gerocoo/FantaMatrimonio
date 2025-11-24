@@ -1,29 +1,29 @@
 {
-  "version": "1.1",
+  "version": "1.1.2",
   "name": "FantaMatrimonio",
   "short_name": "FantaMatrimonio",
   "icons": [
-    {
-      "src": "/static/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+     {
+      "src": "/static/icons/background.png",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/static/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "/static/icons/foreground.png",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/icons/monochrome.png",
-      "sizes": "196x196",
-      "type": "image/svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "monochrome"
     }
   ],
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff"
 }
