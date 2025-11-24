@@ -4,13 +4,13 @@
   "short_name": "FantaMatrimonio",
   "icons": [
      {
-      "src": "/static/icon/background.png",
+      "src": "/static/icon/icon-512.png.png",
       "sizes": "any",
       "type": "image",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/icon/foreground.png",
+      "src": "/static/icon/icon-512.png.png",
       "sizes": "any",
       "type": "image",
       "purpose": "any maskable"
