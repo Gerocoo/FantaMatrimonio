@@ -6,19 +6,19 @@
      {
       "src": "/static/icon/background.png",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/icon/foreground.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image",
       "purpose": "any maskable"
     },
     {
       "src": "/static/icon/monochrome.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image",
       "purpose": "monochrome"
     }
   ],
