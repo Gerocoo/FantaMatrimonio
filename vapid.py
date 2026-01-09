@@ -13,7 +13,7 @@ private_pem = private_key.private_bytes(
 with open('vapid_private.pem', 'wb') as f:
     f.write(private_pem)
 
-print("✅ File 'vapid_private.pem' creato")
+print("File 'vapid_private.pem' creato")
 public_key = private_key.public_key()
 public_bytes = public_key.public_bytes(
     encoding=serialization.Encoding.X962,
