@@ -1,0 +1,3 @@
+vapid_private.pem
+*.pem
+.env
