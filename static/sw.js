@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fantamatrimonio-v11-' + new Date().getTime();
+const CACHE_NAME = 'fantamatrimonio-v12-' + new Date().getTime();
 const STATIC_CACHE = [
   '/static/default.png',
   '/static/bkground.jpg',

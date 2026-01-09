@@ -19,7 +19,6 @@
 </main>
   {% if not session.get('user_id') %}
     <a href="{{ url_for('login') }}" class="btn btn-primary">Inizia a Giocare</a>
-    
     <a href="/login/google" class="btn btn-google" style="
     padding-right: 22px;
     padding-left: 22px;
@@ -32,8 +31,6 @@
     <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Le Mie Leghe</a>
   {% endif %}
 </div>
-
-<!-- Lista leghe attive -->
 <main style="max-width: 1200px;">
    <div class="search-container">
     <form method="GET" action="{{ url_for('home') }}" class="search-form">
@@ -75,8 +72,6 @@
   <p class="no-data">Nessuna lega disponibile al momento</p>
   {% endif %}
 </main>
-
-<!-- Popup per entrare nella lega -->
 <div id="joinPopupOverlay" class="popup-overlay" style="display: none;" onclick="closeJoinPopup()">
   <div class="popup-container" onclick="event.stopPropagation()">
     <button class="popup-close" onclick="closeJoinPopup()">&times;</button>
@@ -143,34 +138,25 @@ function closeJoinPopup() {
   document.getElementById('joinPopupOverlay').style.display = 'none';
   document.getElementById('leaguePassword').value = '';
 }
-
-// NUOVO: Salva il codice della lega prima di mandare al login
 function saveLeagueCodeForRedirect() {
   const code = document.getElementById('hiddenCode').value;
   sessionStorage.setItem('redirect_to_league', code);
-  // Il form si sottomette normalmente
 }
 
-// Chiudi il popup premendo ESC
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape') {
     closeJoinPopup();
   }
 });
-</script>
-<script>
-// Dopo il login riuscito, controlla se c'è una lega da raggiungere
+
 document.addEventListener('DOMContentLoaded', function() {
-  // Se sei già loggato e c'è una lega salvata in sessionStorage
   if ('{{ session.get("user_id") }}') {
     const redirectLeague = sessionStorage.getItem('redirect_to_league');
     if (redirectLeague) {
-      // Reindirizza al join con il codice della lega
       window.location.href = `/league/join?code=${redirectLeague}`;
       sessionStorage.removeItem('redirect_to_league');
     }
   }
 });
 </script>
-
 {% endblock %}

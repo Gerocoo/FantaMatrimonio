@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import os
 from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -28,23 +29,23 @@ import json
 from py_vapid import Vapid
 from pywebpush import webpush, WebPushException
 import json
-import os
+load_dotenv()
 
-# Caricamento VAPID da file
+
 VAPID_FILE = 'vapid_private.pem'
 VAPID_CLAIMS = {"sub": "mailto:admin@therealfantamatrimonio.it"}
 
 if os.path.exists(VAPID_FILE):
     vapid_instance = Vapid.from_file(VAPID_FILE)
-    print("✅ Chiavi VAPID caricate da", VAPID_FILE)
+    print("Chiavi VAPID caricate da", VAPID_FILE)
 else:
     vapid_instance = None
-    print("❌ File", VAPID_FILE, "non trovato!")
+    print("File", VAPID_FILE, "non trovato!")
 
 def send_push_notification(user_id, title, body, url, tag='default'):
     """Invia notifica push"""
     if not vapid_instance:
-        print("⚠️ VAPID non inizializzato")
+        print("VAPID non inizializzato")
         return
     
     subscriptions = PushSubscription.query.filter_by(
@@ -53,7 +54,7 @@ def send_push_notification(user_id, title, body, url, tag='default'):
     ).all()
     
     if not subscriptions:
-        print(f"ℹ️ Nessuna subscription per user {user_id}")
+        print(f"Nessuna subscription per user {user_id}")
         return
     
     payload = json.dumps({
@@ -76,20 +77,16 @@ def send_push_notification(user_id, title, body, url, tag='default'):
                 vapid_claims=VAPID_CLAIMS
             )
             
-            print(f"✅ Notifica inviata a user {user_id}")
+            print(f"Notifica inviata a user {user_id}")
             
         except WebPushException as e:
-            print(f"❌ WebPush error: {e}")
+            print(f"WebPush error: {e}")
             if e.response and e.response.status_code == 410:
                 sub.is_active = False
                 db.session.commit()
                 
         except Exception as e:
-            print(f"❌ Errore: {e}")
-
-
-
-
+            print(f"Errore: {e}")
 try:
     from PIL import Image, ImageDraw
 
@@ -106,7 +103,7 @@ except ImportError:
     print("Avatar default creato!")
 
 app = Flask(__name__)
-app.secret_key = "JDHFFLWEJFWEHFLJWEWEOIFHEHEWIOF"
+app.secret_key = os.getenv('SECRET_KEY')
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fantamatrimonio.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -118,8 +115,8 @@ def inject_now():
 
 
 google_bp = make_google_blueprint(
-    client_id="784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com",
-    client_secret="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",
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
     redirect_to="google_login", 
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
 )
@@ -150,11 +147,11 @@ class User(db.Model):
     reset_token = db.Column(db.String(100), unique=True)
     reset_token_expiry = db.Column(db.DateTime)
     
-    # NUOVO: Questionario e Propensione al Matrimonio
+    #Questionario iniziale
     questionnaire_completed = db.Column(db.Boolean, default=False)
     marriage_score = db.Column(db.Integer, default=0)
     
-    # Dati personali
+    
     age = db.Column(db.Integer)
     gender = db.Column(db.String(20), default="Altro")  # AGGIUNGI QUESTA RIGA
     employment_status = db.Column(db.String(100))
@@ -168,7 +165,7 @@ class User(db.Model):
     living_together = db.Column(db.String(50))
     commitment_level = db.Column(db.Integer)
     
-    # ===== METODI =====
+    
     def set_password(self, password):
         """Imposta la password con hash"""
         self.password_hash = generate_password_hash(password)
@@ -193,7 +190,7 @@ class ChatMessage(db.Model):
     message = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships - NOTA: backref rinominati per evitare conflitti
+    
     user = db.relationship('User', backref=db.backref('messages_sent', lazy='dynamic'))
     league = db.relationship('League', backref=db.backref('messages', lazy='dynamic'))
 
@@ -248,8 +245,6 @@ class LeagueMember(db.Model):
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     total_score = db.Column(db.Float, default=0.0)
     is_banned = db.Column(db.Boolean, default=False)
-    
-    # Relationship
     user = db.relationship('User', back_populates='memberships')
     votes_received = db.relationship('FactorVote', backref='member', lazy=True)
     
@@ -290,19 +285,19 @@ class LeagueMember(db.Model):
     def user_color(self):
         """Restituisce il colore assegnato a questo utente per le chat"""
         colors = [
-            '#FFD700',  # Oro
-            '#C0C0C0',  # Argento
-            '#CD7F32',  # Bronzo
-            '#FF6B9D',  # Rosa
-            '#A569BD',  # Viola
-            '#5DADE2',  # Azzurro
-            '#52BE80',  # Verde
-            '#F8B88B',  # Arancione
+            '#FFD700',  
+            '#C0C0C0',  
+            '#CD7F32', 
+            '#FF6B9D',  
+            '#A569BD',  
+            '#5DADE2',  
+            '#52BE80',  
+            '#F8B88B', 
         ]
         return colors[self.user_id % len(colors)]
     
     def get_voting_breakdown(self):
-        """Restituisce il dettaglio dei voti ricevuti per ogni fattore"""
+       
         breakdown = {}
         for vote in self.votes_received:
             if vote.factor_id not in breakdown:
@@ -320,7 +315,7 @@ class LeagueMember(db.Model):
         return breakdown
 
 class PushSubscription(db.Model):
-    """Model per salvare le subscription push dei browser"""
+    
     __tablename__ = 'push_subscription'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -329,7 +324,7 @@ class PushSubscription(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relazione con User
+    
     user = db.relationship('User', backref=db.backref('push_subscriptions', lazy=True))
     
     def __repr__(self):
@@ -342,14 +337,13 @@ class StandardFactor(db.Model):
     category = db.Column(db.String(50), nullable=False)
     default_weight = db.Column(db.Float, nullable=False, default=0)
 
-# Tabella di associazione per legare i fattori standard alle leghe
+
 class LeagueFactor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
     standard_factor_id = db.Column(db.Integer, db.ForeignKey('standard_factor.id'), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=False)
     
-    # Rendi la coppia unica per evitare duplicati
     __table_args__ = (db.UniqueConstraint('league_id', 'standard_factor_id', name='_league_factor_uc'),)
 
     league = db.relationship('League', backref=db.backref('active_standard_factors', lazy=True))
@@ -363,7 +357,7 @@ class Factor(db.Model):
     weight = db.Column(db.Float, default=1.0)
     is_default = db.Column(db.Boolean, default=False)
     abilitato = db.Column(db.Boolean, default=True)
-    gender = db.Column(db.String(20), default="Entrambi")  # AGGIUNGI QUESTA RIGA
+    gender = db.Column(db.String(20), default="Entrambi")  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     votes = db.relationship('FactorVote', backref='factor', lazy=True, cascade='all, delete-orphan')
 
@@ -450,18 +444,18 @@ def setup_default_factors(league_id):
         all_standard_factors = StandardFactor.query.all()
         
         for factor in all_standard_factors:
-            # Verifica che il link non esista già
+         
             existing_link = LeagueFactor.query.filter_by(
                 league_id=league_id,
                 standard_factor_id=factor.id
             ).first()
             
             if not existing_link:
-                # Crea il link come ATTIVO di default
+                
                 new_link = LeagueFactor(
                     league_id=league_id,
                     standard_factor_id=factor.id,
-                    is_active=True  # Tutti attivi di default
+                    is_active=True  
                 )
                 db.session.add(new_link)
         
@@ -585,7 +579,7 @@ def send_reset_password_email(user_email, username, reset_url):
             html=reset_password_html_template.format(username=username, reset_url=reset_url),
             category="password_reset"
         )
-        client = MailtrapClient(token="616b82792c3fd1696348a9d3f3ff382b")
+        client = MailtrapClient(token=os.getenv('MAILTRAP_TOKEN'))
         response = client.send(mail)
         return True
     except Exception as e:
@@ -611,12 +605,9 @@ def leave_league(league_id):
             return jsonify({'error': 'Non puoi uscire dalla lega di cui sei admin!'}), 403
         
         user = User.query.get(session['user_id'])
-        
-        # Rimuovi il membro
         db.session.delete(member)
         db.session.commit()
         
-        # Invia notifica (non bloccante)
         try:
             send_push_notification(
                 user_id=league.owner_id,
@@ -673,18 +664,17 @@ def delete_league_members(league_id):
             if member and member.user_id != league.owner_id:
                 user = User.query.get(member.user_id)
                 
-                # =============================================================
+                
                 # ELIMINA TUTTI I VOTI ASSOCIATI AL MEMBRO
-                # =============================================================
+                
                 try:
-                    # Elimina voti RICEVUTI dal membro (member_id)
                     votes_received = FactorVote.query.filter_by(
                         member_id=member.id
                     ).all()
                     for vote in votes_received:
                         db.session.delete(vote)
                     
-                    # Elimina voti DATI dall'utente (user_id)
+                    
                     votes_given = FactorVote.query.filter_by(
                         user_id=member.user_id,
                         league_id=league_id
@@ -697,14 +687,14 @@ def delete_league_members(league_id):
                 except Exception as vote_error:
                     print(f"⚠️ Errore eliminazione voti per member {member.id}: {vote_error}")
                 
-                # Aggiungi alla blacklist
+                
                 blacklisted = BlacklistedMember(
                     league_id=league_id, 
                     user_id=member.user_id
                 )
                 db.session.add(blacklisted)
                 
-                # Rimuovi dalla lega
+                
                 db.session.delete(member)
                 
                 eliminated_users.append(member.user_id)
@@ -717,36 +707,35 @@ def delete_league_members(league_id):
                     'message': 'Non puoi eliminare il creatore della lega'
                 }), 403
         
-        # COMMIT delle modifiche al database
+        
         db.session.commit()
         print(f"✅ {len(eliminated_users)} membri rimossi dalla lega {league.id}")
         
-        # Ricalcola punteggi (dopo aver eliminato i voti)
+
         try:
             calculate_member_scores(league_id)
-            print(f"✅ Punteggi ricalcolati per lega {league.id}")
+            print(f"Punteggi ricalcolati per lega {league.id}")
         except Exception as calc_error:
             print(f"⚠️ Errore calcolo punteggi: {calc_error}")
         
-        # Imposta messaggio flash
+       
         for user_id in eliminated_users:
             if user_id == session.get('user_id'):
                 session['expelled_from'] = league.name
         
-        # Notifiche push (non bloccanti)
+        
         for user_id in eliminated_users:
             try:
                 send_push_notification(
                     user_id=user_id,
-                    title=f"⛔ {league.name}",
+                    title=f"{league.name}",
                     body="Sei stato rimosso dalla lega dall'amministratore",
                     url="/dashboard",
                     tag=f"kick-{league.id}-{user_id}"
                 )
             except Exception as notif_error:
-                print(f"⚠️ Notifica non inviata: {notif_error}")
+                print(f"Notifica non inviata: {notif_error}")
         
-        # Notifica altri membri (opzionale)
         if eliminated_usernames:
             try:
                 remaining_members = LeagueMember.query.filter_by(league_id=league_id).all()
@@ -759,7 +748,7 @@ def delete_league_members(league_id):
                         try:
                             send_push_notification(
                                 user_id=remaining_member.user_id,
-                                title=f"ℹ️ {league.name}",
+                                title=f"{league.name}",
                                 body=f"{kicked_names} è stato rimosso dalla lega",
                                 url=f"/league/{league.id}",
                                 tag=f"member-removed-{league.id}"
@@ -777,7 +766,7 @@ def delete_league_members(league_id):
     
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Errore critico in delete_league_members: {e}")
+        print(f"Errore critico in delete_league_members: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -790,19 +779,10 @@ def delete_league_members(league_id):
 def test_push():
     """Route per testare le notifiche push"""
     if 'user_id' not in session:
-        return "⛔ Devi essere loggato", 401
+        return "Devi essere loggato!", 401
     
     user_id = session['user_id']
     user = User.query.get(user_id)
-    
-    # Test 1: Notifica base
-    send_push_notification(
-        user_id=user_id,
-        title="🧪 Test Notifica Base",
-        body="Questa è una notifica di test! Se la vedi, funziona!",
-        url="/dashboard",
-        tag="test-basic"
-    )
     
     return f"""
     <h1>✅ Notifica inviata a {user.username}!</h1>
@@ -813,13 +793,12 @@ def test_push():
 
 @app.route('/test-push-all')
 def test_push_all():
-    """Testa diversi tipi di notifiche"""
+
     if 'user_id' not in session:
-        return "⛔ Devi essere loggato", 401
+        return "Devi essere loggato", 401
     
     user_id = session['user_id']
     
-    # Test vari tipi di notifiche
     notifications = [
         {
             'title': '💬 Test Chat',
@@ -828,7 +807,7 @@ def test_push_all():
             'tag': 'test-chat'
         },
         {
-            'title': '🎉 Test Join',
+            'title': 'Test Join',
             'body': 'Luigi si è unito alla lega!',
             'url': '/dashboard',
             'tag': 'test-join'
@@ -855,7 +834,7 @@ def test_push_all():
             url=notif['url'],
             tag=notif['tag']
         )
-        # Piccolo delay per non sovrapporle
+       
         import time
         time.sleep(0.5)
     
@@ -878,7 +857,7 @@ def test_push_all():
 from flask import request, jsonify
 import json
 
-# Route per salvare la subscription del browser
+
 @app.route('/api/push-subscription', methods=['POST'])
 def save_push_subscription():
     """Salva la subscription push del browser nel database"""
@@ -889,17 +868,15 @@ def save_push_subscription():
         subscription_info = request.json
         user_id = session['user_id']
         
-        # Converti subscription in stringa JSON
         subscription_json = json.dumps(subscription_info)
         
-        # Verifica se esiste già questa subscription
         existing = PushSubscription.query.filter_by(
             user_id=user_id,
             subscription_info=subscription_json
         ).first()
         
         if not existing:
-            # Crea nuova subscription
+            
             new_sub = PushSubscription(
                 user_id=user_id,
                 subscription_info=subscription_json,
@@ -907,14 +884,14 @@ def save_push_subscription():
             )
             db.session.add(new_sub)
             db.session.commit()
-            print(f"✅ Subscription salvata per user {user_id}")
+            print(f"Subscription salvata per user {user_id}")
         else:
-            print(f"ℹ️ Subscription già esistente per user {user_id}")
+            print(f"ℹSubscription già esistente per user {user_id}")
         
         return jsonify({'success': True, 'message': 'Subscription salvata'})
     
     except Exception as e:
-        print(f"❌ Errore salvataggio subscription: {e}")
+        print(f"Errore salvataggio subscription: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/league/<int:league_id>/manage_factors', methods=['GET'])
@@ -926,11 +903,7 @@ def manage_factors(league_id):
     if league.owner_id != session['user_id']:
         flash('Solo il proprietario può gestire i fattori.', 'danger')
         return redirect(url_for('dashboard'))
-
-    # Prendi tutti i fattori standard disponibili
     all_factors = StandardFactor.query.order_by(StandardFactor.category, StandardFactor.name).all()
-    
-    # Prendi gli ID dei fattori già attivi per questa lega
     active_factor_links = LeagueFactor.query.filter_by(league_id=league_id, is_active=True).all()
     active_factor_ids = {link.standard_factor_id for link in active_factor_links}
     
@@ -941,7 +914,6 @@ def manage_factors(league_id):
 
 @app.route('/api/league/<int:league_id>/voting', methods=['GET'])
 def get_voting(league_id):
-    """Ritorna la votazione ATTUALE di una lega"""
     voting = Voting.query.filter_by(league_id=league_id).order_by(Voting.created_at.desc()).first()
     
     if voting:
@@ -960,10 +932,8 @@ def get_voting(league_id):
 
 @app.route('/api/league/<int:league_id>/voting', methods=['POST'])
 def create_voting(league_id):
-    """Crea una NUOVA votazione per una lega"""
-    data = request.json
     
-    # Ricevi le date dal frontend
+    data = request.json
     start_time = datetime.fromisoformat(data.get('start_time', '').replace('Z', '+00:00'))
     end_time = datetime.fromisoformat(data.get('end_time', '').replace('Z', '+00:00'))
     
@@ -995,20 +965,20 @@ def toggle_factor(league_id, factor_id):
         if league.owner_id != session['user_id']:
             return jsonify({'status': 'error', 'message': 'Solo il proprietario può modificare.'}), 403
 
-        # Cerca il link esistente
+        
         link = LeagueFactor.query.filter_by(
             league_id=league_id, 
             standard_factor_id=factor_id
         ).first()
 
         if link:
-            # Esiste già: cambia lo stato is_active
+            
             link.is_active = not link.is_active
             db.session.commit()
             message = f"Fattore {'attivato' if link.is_active else 'disattivato'}"
             is_active = link.is_active
         else:
-            # Non esiste: crealo come attivo
+            
             new_link = LeagueFactor(
                 league_id=league_id, 
                 standard_factor_id=factor_id, 
@@ -1045,13 +1015,13 @@ def toggle_custom_factor(league_id, factor_id):
         if league.owner_id != session['user_id']:
             return jsonify({'status': 'error', 'message': 'Solo il proprietario può modificare.'}), 403
 
-        # Cerca il fattore custom
+        
         factor = Factor.query.filter_by(id=factor_id, league_id=league_id).first()
         
         if not factor:
             return jsonify({'status': 'error', 'message': 'Fattore non trovato'}), 404
         
-        # Inverti lo stato di abilitazione
+        
         factor.abilitato = not factor.abilitato
         db.session.commit()
         
@@ -1077,7 +1047,7 @@ from datetime import datetime, timedelta
 
 @app.route('/api/voting-status', methods=['GET'])
 def get_voting_status():
-    """Ritorna lo stato della votazione"""
+    
     voting_active = request.args.get('voting_active', 'false') == 'true'
     if voting_active:
         end_time = request.args.get('end_time')
@@ -1089,11 +1059,9 @@ def get_voting_status():
 
 @app.route('/api/start-voting', methods=['POST'])
 def start_voting():
-    """Avvia la votazione con un countdown"""
+    
     duration_minutes = request.json.get('duration', 5)  # default 5 minuti
     end_time = datetime.now() + timedelta(minutes=duration_minutes)
-    
-    # Salva in sessione o database
     session['voting_active'] = True
     session['voting_end_time'] = end_time.isoformat()
     
@@ -1104,7 +1072,7 @@ def start_voting():
 
 @app.route('/api/stop-voting', methods=['POST'])
 def stop_voting():
-    """Ferma la votazione"""
+    
     session['voting_active'] = False
     return jsonify({'success': True})
 
@@ -1115,27 +1083,20 @@ def forgot_password():
     
         username = request.form.get("username")
         email = request.form.get("email")
-        
-        # Verifica che username ed email corrispondano
         user = User.query.filter_by(username=username, email=email).first()
         
         if user:
-            # Genera token univoco
             token = secrets.token_urlsafe(32)
             user.reset_token = token
             user.reset_token_expiry = datetime.now() + timedelta(hours=1)  # Valido 1 ora
             db.session.commit()
-            
-            # Invia email
             reset_url = url_for('reset_password', token=token, _external=True)
-            
             if send_reset_password_email(user.email, user.username, reset_url):
                 flash("Email di reimpostazione inviata! Controlla la tua casella di posta.", "success")
             else:
                 flash("Errore nell'invio dell'email. Riprova più tardi.", "danger")
                 return redirect(url_for('forgot_password'))
         else:
-            # Per sicurezza, non specificare se username o email sono sbagliati
             flash("Se username ed email corrispondono, riceverai un'email di reimpostazione.", "info")
         
         return redirect(url_for('login'))
@@ -1143,12 +1104,11 @@ def forgot_password():
     return render_template("forgot_password.html")
 
 
-# Route per reimpostare la password con il token
+
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
     user = User.query.filter_by(reset_token=token).first()
-    
-    # Verifica token valido e non scaduto
+
     if not user or not user.reset_token_expiry or user.reset_token_expiry < datetime.now():
         flash("Link di reimpostazione non valido o scaduto.", "danger")
         return redirect(url_for('forgot_password'))
@@ -1165,7 +1125,6 @@ def reset_password(token):
             flash("La password deve essere di almeno 6 caratteri.", "warning")
             return redirect(url_for('reset_password', token=token))
         
-        # Aggiorna password
         user.set_password(new_password)
         user.reset_token = None
         user.reset_token_expiry = None
@@ -1235,7 +1194,7 @@ def questionnaire():
     
     if request.method == "POST":
         try:
-            # RACCOGLI TUTTI I DATI DAL FORM
+            
             gender = request.form.get('gender', 'Altro')
             age = request.form.get('age', 18)
             employment_status = request.form.get('employment_status', '')
@@ -1249,23 +1208,22 @@ def questionnaire():
             living_together = request.form.get('living_together', '')
             commitment_level = request.form.get('commitment_level', 5)
             
-            # CONVERTI A NUMERI
             age = int(age) if age else 18
             longest_relationship = int(longest_relationship) if longest_relationship else 0
             num_relationships = int(num_relationships) if num_relationships else 0
             wants_children = int(wants_children) if wants_children else 0
             commitment_level = int(commitment_level) if commitment_level else 5
             
-            # CALCOLA IL PUNTEGGIO
+            
             score = 0
             
-            # Sesso (bonus per stabilità)
+           
             if gender == 'Maschio':
                 score += 5
             elif gender == 'Femmina':
                 score += 5
             
-            # Età (25-35 anni = +30, <22 o >40 = +10)
+            
             if 25 <= age <= 35:
                 score += 30
             elif 22 <= age < 25 or 35 < age <= 40:
@@ -1273,16 +1231,16 @@ def questionnaire():
             else:
                 score += 10
             
-            # Impiego stabile = +25
+            
             if employment_status in ['Impiegato', 'Libero professionista', 'Imprenditore']:
                 score += 25
             elif employment_status in ['Studente', 'Disoccupato']:
                 score += 5
             
-            # Relazione più lunga (+2 punti per ogni mese fino a max +50)
+            
             score += min(longest_relationship * 2, 50)
             
-            # Numero di relazioni (2-5 = +20, 1 = +10, >5 = +5)
+            
             if 2 <= num_relationships <= 5:
                 score += 20
             elif num_relationships == 1:
@@ -1290,7 +1248,7 @@ def questionnaire():
             else:
                 score += 5
             
-            # Stato attuale
+            
             if current_status == 'Fidanzato/a':
                 score += 40
             elif current_status == 'Convivente':
@@ -1300,13 +1258,13 @@ def questionnaire():
             elif current_status == 'Sposato/a':
                 score += 100
             
-            # Ha mai tradito? (-30 se sì)
+           
             if has_cheated:
                 score -= 30
             else:
                 score += 20
             
-            # Tradiresti?
+            
             if would_cheat == 'Mai':
                 score += 30
             elif would_cheat == 'Forse':
@@ -1314,7 +1272,7 @@ def questionnaire():
             elif would_cheat == 'Dipende':
                 score -= 20
             
-            # Vuoi figli? (+10 per ogni figlio)
+            
             if wants_children == 0:
                 score -= 20
             elif wants_children == 1:
@@ -1324,7 +1282,6 @@ def questionnaire():
             elif wants_children >= 3:
                 score += 50
             
-            # Convivenza
             if living_together == 'Sì':
                 score += 40
             elif living_together == 'Non ancora':
@@ -1332,10 +1289,7 @@ def questionnaire():
             else:
                 score -= 10
             
-            # Livello di impegno (commitment_level da 1 a 10)
             score += commitment_level * 5
-            
-            # SALVA NEL DATABASE
             user.gender = gender
             user.age = age
             user.employment_status = employment_status
@@ -1350,9 +1304,7 @@ def questionnaire():
             user.commitment_level = commitment_level
             user.marriage_score = max(0, score)
             user.questionnaire_completed = True
-            
             db.session.commit()
-            
             flash(f"Grazie per aver completato il questionario! Il tuo punteggio di propensione al matrimonio è: {score}", "success")
             return redirect(url_for('dashboard'))
         
@@ -1566,7 +1518,7 @@ def manage_blacklist(league_id):
             db.session.commit()
             flash(f'Utente {user.username} sbannato con successo! Può rientrare nella lega.', 'success')
             
-            # AGGIUNTO: Reindirizza alla pagina della lega invece che alla blacklist
+           
             return redirect(url_for('league_detail', league_id=league_id))
         
         return redirect(url_for('manage_blacklist', league_id=league_id))
@@ -1588,13 +1540,11 @@ def get_chat_messages(league_code):
     
     user_id = session['user_id']
     league = League.query.filter_by(code=league_code).first_or_404()
-
-    # Controllo di membership (ho semplificato la query perché il controllo blacklist è meno critico qui)
     is_member = LeagueMember.query.filter_by(league_id=league.id, user_id=user_id).first()
     if not is_member:
         return jsonify({'error': 'Non sei membro di questa lega'}), 403
     
-    # Carica messaggi e utenti correlati in modo efficiente
+    
     messages = ChatMessage.query.options(
         db.joinedload(ChatMessage.user)
     ).filter(
@@ -1602,15 +1552,13 @@ def get_chat_messages(league_code):
     ).order_by(
         ChatMessage.created_at.asc()
     ).all()
-
-    # Costruisci il risultato (ora molto più semplice)
     result = [
         {
             'id': msg.id,
             'user': msg.user.username,
             'message': msg.message or '',
             'created_at': msg.created_at.isoformat()
-            # La chiave 'attachments' è stata rimossa
+          
         } for msg in messages
     ]
     
@@ -1624,8 +1572,6 @@ def send_chat_message(league_code):
         return jsonify({'error': 'Non autenticato'}), 401
     
     league = League.query.filter_by(code=league_code).first_or_404()
-    
-    # CONTROLLO BLACKLIST
     is_blacklisted = BlacklistedMember.query.filter_by(
         league_id=league.id,
         user_id=session['user_id']
@@ -1634,7 +1580,6 @@ def send_chat_message(league_code):
     if is_blacklisted:
         return jsonify({'error': 'Sei stato espulso da questa lega e non puoi chattare'}), 403
     
-    # CONTROLLO MEMBERSHIP
     is_member = LeagueMember.query.filter_by(
         league_id=league.id,
         user_id=session['user_id']
@@ -1645,31 +1590,30 @@ def send_chat_message(league_code):
     
     message_text = request.form.get('message', '').strip()
     
-    # Validazione: almeno un messaggio o un file
+    
     if not message_text and not request.files:
         return jsonify({'error': 'Messaggio o file richiesto'}), 400
     
-    # Crea il messaggio
+   
     new_message = ChatMessage(
         league_id=league.id,
         user_id=session['user_id'],
         message=message_text if message_text else None
     )
     db.session.add(new_message)
-    db.session.flush()  # Ottieni l'ID prima del commit
+    db.session.flush()  
     
-    # Gestisci file allegati
+    
     attachments_data = []
     for key in request.files:
         file = request.files[key]
         
         if file and file.filename:
-            # Verifica estensione
+            
             if not allowed_file(file.filename):
                 db.session.rollback()
                 return jsonify({'error': f'Tipo file non permesso: {file.filename}'}), 400
-            
-            # Genera nome file sicuro e unico
+
             original_filename = secure_filename(file.filename)
             timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')
             ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
@@ -1677,11 +1621,11 @@ def send_chat_message(league_code):
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             
             try:
-                # Salva file
+                
                 file.save(filepath)
                 file_size = os.path.getsize(filepath)
                 
-                # Aggiungi info allegato
+                
                 attachments_data.append({
                     'name': unique_filename,
                     'original_name': original_filename,
@@ -1690,21 +1634,17 @@ def send_chat_message(league_code):
             
             except Exception as e:
                 db.session.rollback()
-                # Rimuovi file se salvato
+                
                 if os.path.exists(filepath):
                     os.remove(filepath)
                 return jsonify({'error': f'Errore nel salvataggio: {str(e)}'}), 500
     
     try:
         db.session.commit()
-        
-        # =====================================================================
-        # INVIA NOTIFICHE PUSH agli altri membri della lega
-        # =====================================================================
         sender = User.query.get(session['user_id'])
         all_members = LeagueMember.query.filter_by(league_id=league.id).all()
         
-        # Determina il corpo della notifica
+       
         if message_text:
             notification_body = f"{sender.username}: {message_text[:50]}"
             if len(message_text) > 50:
@@ -1715,7 +1655,7 @@ def send_chat_message(league_code):
         else:
             notification_body = f"{sender.username} ha inviato un messaggio"
         
-        # Invia notifica a tutti tranne il mittente
+       
         for member in all_members:
             if member.user_id != session['user_id']:
                 try:
@@ -1727,8 +1667,7 @@ def send_chat_message(league_code):
                         tag=f"chat-{league.id}-{new_message.id}"
                     )
                 except Exception as e:
-                    # Log l'errore ma non bloccare la risposta
-                    print(f"❌ Errore invio notifica a user {member.user_id}: {e}")
+                    print(f"Errore invio notifica a user {member.user_id}: {e}")
         
         return jsonify({
             'status': 'ok',
@@ -1741,7 +1680,6 @@ def send_chat_message(league_code):
     
     except Exception as e:
         db.session.rollback()
-        # Rimuovi file caricati in caso di errore
         for att in attachments_data:
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], att['name'])
             if os.path.exists(filepath):
@@ -1765,11 +1703,11 @@ def delete_chat_message(league_code, message_id):
     league = League.query.filter_by(code=league_code).first_or_404()
     message = ChatMessage.query.get_or_404(message_id)
     
-    # Verifica permessi
+    
     if message.user_id != session['user_id'] and league.owner_id != session['user_id']:
         return jsonify({'error': 'Non autorizzato'}), 403
     
-    # Elimina file allegati
+    
     for attachment in message.attachments:
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], attachment.filename)
         if os.path.exists(filepath):
@@ -1884,17 +1822,15 @@ def google_login():
 def google_login_token():
     """Gestisce il login tramite popup Google Sign-In"""
     try:
+        CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
         token = request.json.get("token")
-        
-        # Verifica il token con Google
         idinfo = id_token.verify_oauth2_token(
             token, 
             google_requests.Request(), 
-            "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com"
+            CLIENT_ID 
         )
         
-        # Verifica che sia per la tua app
-        if idinfo['aud'] != "784920498349-fh705qbs12onumrks7pbgvn3rdj7ud39.apps.googleusercontent.com":
+        if idinfo['aud'] != CLIENT_ID:
             raise ValueError('Token non valido')
         
         email = idinfo.get('email')
@@ -1907,7 +1843,7 @@ def google_login_token():
         avatar_url = idinfo.get('picture', 'default.png')
         username = email.split("@")[0]
         
-        # Cerca o crea l'utente
+        
         user = User.query.filter_by(email=email).first()
         if user:
             if user.provider != "google":
@@ -1915,12 +1851,12 @@ def google_login_token():
                     "success": False, 
                     "message": "Questa email è già registrata con un account locale"
                 }), 400
-            # Aggiorna l'avatar se è cambiato
+            
             if user.avatar != avatar_url:
                 user.avatar = avatar_url
                 db.session.commit()
         else:
-            # Crea nuovo utente
+            
             user = User(
                 username=username,
                 email=email,
@@ -1930,7 +1866,7 @@ def google_login_token():
             db.session.add(user)
             db.session.commit()
         
-        # Imposta la sessione
+        
         session['user_id'] = user.id
         session['username'] = user.username
         session['avatar'] = user.avatar
@@ -2012,10 +1948,6 @@ def logout():
     flash("Logout effettuato", "info")
     return redirect(url_for("home"))
 
-# ============================================
-# ROUTES - Dashboard e Profilo
-# ============================================
-
 @app.route("/dashboard")
 def dashboard():
     if 'user_id' not in session:
@@ -2023,19 +1955,14 @@ def dashboard():
         return redirect(url_for("login"))
     
     user = User.query.get(session['user_id'])
-    
-    # BLOCCO: Se non ha completato il questionario, reindirizza
     if not user.questionnaire_completed:
         return redirect(url_for("questionnaire"))
-    
-    # Controlla se l'utente è stato espulso da una lega
+
     if 'expelled_from' in session:
         league_name = session.pop('expelled_from')
         flash(f"Sei stato espulso dalla lega '{league_name}' dall'amministratore", "danger")
     
     owned_leagues = League.query.filter_by(owner_id=user.id).all()
-    
-    # Leghe a cui l'utente partecipa
     memberships = LeagueMember.query.filter_by(user_id=user.id).all()
     joined_leagues = [m.league for m in memberships]
     
@@ -2052,8 +1979,6 @@ def profilo():
         return redirect(url_for("login"))
     
     user = User.query.get(session['user_id'])
-    
-    # Gestione upload avatar
     if request.method == "POST":
         if 'avatar' not in request.files:
             flash("Nessun file selezionato", "danger")
@@ -2071,19 +1996,16 @@ def profilo():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(filepath)
 
-            # Elimina vecchio avatar se personalizzato
             if user.avatar and user.avatar != "default.png" and not user.avatar.startswith("http"):
                 old_path = os.path.join("static", user.avatar)
                 if os.path.exists(old_path):
                     os.remove(old_path)
 
-            # Aggiorna avatar e timestamp
+
             user.avatar = f"uploads/avatars/{unique_filename}"
-            user.updated_at = datetime.utcnow()  # ← AGGIUNGI QUESTO
+            user.updated_at = datetime.utcnow()
             
             db.session.commit()
-            
-            # Aggiorna anche la session con timestamp per cache-busting
             session["avatar"] = user.avatar
             session["avatar_updated"] = int(time.time())  # ← AGGIUNGI QUESTO
             
@@ -2095,10 +2017,6 @@ def profilo():
     
     return render_template("profilo.html", user=user)
 
-
-# ============================================
-# ROUTES - Leghe
-# ============================================
 
 @app.route("/league/create", methods=["GET", "POST"])
 def create_league():
@@ -2122,7 +2040,7 @@ def create_league():
         db.session.add(league)
         db.session.commit()
         
-        # Aggiungi il creatore come membro automaticamente
+        
         creator_member = LeagueMember(
             league_id=league.id,
             user_id=session['user_id'],
@@ -2130,7 +2048,7 @@ def create_league():
         )
         db.session.add(creator_member)
         
-        # Crea fattori di default
+        
         setup_default_factors(league.id)
         db.session.commit()
         
@@ -2151,7 +2069,7 @@ def league_detail(league_id):
         flash("Lega non trovata", "danger")
         return redirect(url_for("dashboard"))
     
-    # CONTROLLO BLACKLIST
+    
     is_blacklisted = BlacklistedMember.query.filter_by(
         league_id=league_id,
         user_id=session['user_id']
@@ -2161,7 +2079,7 @@ def league_detail(league_id):
         flash(f"Sei stato espulso dalla lega '{league.name}' dall'amministratore", "danger")
         return redirect(url_for("dashboard"))
     
-    # CONTROLLO MEMBERSHIP
+    
     is_member = LeagueMember.query.filter_by(
         league_id=league_id, 
         user_id=session['user_id']
@@ -2169,12 +2087,12 @@ def league_detail(league_id):
     
     is_owner = (league.owner_id == session['user_id'])
     
-    # Se non è membro e non è owner, reindirizza
+   
     if not is_member and not is_owner:
         flash("Non sei membro di questa lega", "warning")
         return redirect(url_for("dashboard"))
     
-    # Recupera membri e ORDINA per punteggio calcolato
+    
     members = LeagueMember.query.filter_by(league_id=league_id).all()
     members_sorted = sorted(
         members,
@@ -2182,10 +2100,8 @@ def league_detail(league_id):
         reverse=True
     )
     
-    # Recupera i fattori CUSTOM della lega
-    custom_factors = Factor.query.filter_by(league_id=league_id).all()
     
-    # GESTIONE FATTORI STANDARD
+    custom_factors = Factor.query.filter_by(league_id=league_id).all()
     active_links = LeagueFactor.query.filter_by(league_id=league_id, is_active=True).all()
     active_standard_factor_ids = {link.standard_factor_id for link in active_links}
     
@@ -2193,14 +2109,12 @@ def league_detail(league_id):
     active_standard_factors_for_member = []
     
     if is_owner:
-        # L'owner vede TUTTO il catalogo per poter scegliere
+        
         all_standard_factors_for_owner = StandardFactor.query.order_by(StandardFactor.category, StandardFactor.name).all()
     else:
-        # Un membro vede solo i fattori attivati dall'owner
+        
         if active_standard_factor_ids:
             active_standard_factors_for_member = StandardFactor.query.filter(StandardFactor.id.in_(active_standard_factor_ids)).all()
-    
-    # ===== CARICA VOTAZIONE ATTUALE =====
     voting = Voting.query.filter_by(league_id=league_id).order_by(Voting.created_at.desc()).first()
     
     return render_template(
@@ -2213,7 +2127,7 @@ def league_detail(league_id):
         all_standard_factors=all_standard_factors_for_owner,
         active_standard_factor_ids=active_standard_factor_ids,
         active_standard_factors=active_standard_factors_for_member,
-        voting=voting,  # ===== AGGIUNGI QUESTO =====
+        voting=voting,
     )
 
 @app.route('/league/<int:league_id>/stats')
@@ -2223,15 +2137,11 @@ def league_stats(league_id):
     
     league = League.query.get_or_404(league_id)
     members = LeagueMember.query.filter_by(league_id=league_id).all()
-    
-    # ORDINA PER PUNTEGGIO TOTALE
     members_sorted = sorted(
         members,
         key=lambda m: m.calculated_total_score,
         reverse=True
     )
-    
-    # CALCOLA STATISTICHE
     scores = [m.calculated_total_score for m in members_sorted]
     stats = {
         'totale_voti': len(members),
@@ -2241,7 +2151,7 @@ def league_stats(league_id):
         'disparita': round(max(scores) - min(scores), 2) if scores else 0,
     }
     
-    # FRASI DIVERTENTI DIFFERENZIATE PER SESSO
+    
     funny_phrases = []
     
     if members_sorted:
@@ -2253,7 +2163,7 @@ def league_stats(league_id):
         gender_primo = primo_user.gender if primo_user else "Altro"
         gender_ultimo = ultimo_user.gender if ultimo_user else "Altro"
         
-        # FRASI PER IL PRIMO
+        
         if gender_primo == "Femmina":
             funny_phrases.extend([
                 f"👑 {primo.name} ha la corona! La signora perfetta! 💍",
@@ -2270,7 +2180,7 @@ def league_stats(league_id):
                 f"⛓️‍💥 {primo.name} presto in galera",
             ])
         
-        # FRASI PER L'ULTIMO
+        
         if gender_ultimo == "Femmina":
             funny_phrases.extend([
                 f" {ultimo.name} a gambe aperte,sempre!"
@@ -2295,7 +2205,7 @@ def league_stats(league_id):
     
     funny_phrase = random.choice(funny_phrases)
     
-    # PRONOSTICO DIVERTENTE DIFFERENZIATO
+   
     pronostici_list = []
     
     if len(members_sorted) >= 2:
@@ -2306,7 +2216,7 @@ def league_stats(league_id):
         total_score = sum(scores)
         percentuale = round((primo.calculated_total_score / total_score * 100), 1) if total_score > 0 else 0
         
-        # PRONOSTICI FEMMINE
+        
         if gender_primo == "Femmina":
             pronostici_list = [
                 f" {primo.name} ha il {percentuale}% di diventare la signora X! ",
@@ -2316,7 +2226,7 @@ def league_stats(league_id):
                 f" {primo.name} è la regina! Prepara lo champagne! ",
             ]
         
-        # PRONOSTICI MASCHI
+        
         elif gender_primo == "Maschio":
             pronostici_list = [
                 f""
@@ -2327,7 +2237,7 @@ def league_stats(league_id):
                 f" Il portafoglio di {primo.name} è un magnete!",
             ]
         
-        # PRONOSTICI NEUTRALI
+       
         else:
             pronostici_list = [
                 f"{primo.name} ha il {percentuale}% di vincere!",
@@ -2339,7 +2249,7 @@ def league_stats(league_id):
     else:
         pronostico = "Non ci sono abbastanza dati per il pronostico!"
     
-    # DATI PER I GRAFICI
+   
     member_names = [m.name for m in members_sorted]
     total_scores = scores
     
@@ -2373,7 +2283,7 @@ def join_league():
             flash("Codice lega non valido", "danger")
             return redirect(url_for("join_league"))
         
-        # Controlla se è nella blacklist
+       
         blacklisted = BlacklistedMember.query.filter_by(
             league_id=league.id,
             user_id=session['user_id']
@@ -2383,7 +2293,6 @@ def join_league():
             flash("Sei stato rimosso da questa lega e non puoi rientrare", "danger")
             return redirect(url_for("dashboard"))
         
-        # Controlla se l'utente è già membro
         existing_member = LeagueMember.query.filter_by(
             league_id=league.id, 
             user_id=session['user_id']
@@ -2393,7 +2302,6 @@ def join_league():
             flash("Sei già membro di questa lega", "warning")
             return redirect(url_for("league_detail", league_id=league.id))
         
-        # Verifica password se la lega è protetta
         if league.password_hash:
             if not password:
                 flash("Questa lega richiede una password", "danger")
@@ -2403,7 +2311,6 @@ def join_league():
                 flash("Password errata. Contatta l'amministratore della lega.", "danger")
                 return redirect(url_for("join_league"))
         
-        # Aggiungi l'utente alla lega
         user = User.query.get(session['user_id'])
         member = LeagueMember(
             league_id=league.id,
@@ -2412,13 +2319,8 @@ def join_league():
         )
         db.session.add(member)
         db.session.commit()
-        
-        # =====================================================================
-        # INVIA NOTIFICHE PUSH a tutti i membri esistenti della lega
-        # =====================================================================
         existing_members = LeagueMember.query.filter_by(league_id=league.id).all()
-        
-        # Notifica tutti i membri (incluso l'owner) tranne il nuovo arrivato
+
         for existing_member in existing_members:
             if existing_member.user_id != user.id:
                 try:
@@ -2430,10 +2332,7 @@ def join_league():
                         tag=f"join-{league.id}-{user.id}"
                     )
                 except Exception as e:
-                    # Log l'errore ma non bloccare il join
-                    print(f"❌ Errore invio notifica a user {existing_member.user_id}: {e}")
-        
-        # Notifica speciale per l'owner della lega
+                    print(f"Errore invio notifica a user {existing_member.user_id}: {e}")
         if league.owner_id != user.id:
             try:
                 send_push_notification(
@@ -2444,20 +2343,14 @@ def join_league():
                     tag=f"join-owner-{league.id}-{user.id}"
                 )
             except Exception as e:
-                print(f"❌ Errore invio notifica all'owner {league.owner_id}: {e}")
+                print(f"Errore invio notifica all'owner {league.owner_id}: {e}")
         
         flash(f"Sei entrato nella lega '{league.name}'!", "success")
         return redirect(url_for("league_detail", league_id=league.id))
     
-    # GET - mostra tutte le leghe disponibili
+    
     leagues = League.query.filter_by(is_active=True).all()
     return render_template("join_league.html", leagues=leagues)
-
-
-
-# ============================================
-# ROUTES - Amministrazione Lega
-# ============================================
 
 @app.route("/league/<int:league_id>/add_member", methods=["POST"])
 def add_member(league_id):
@@ -2470,7 +2363,6 @@ def add_member(league_id):
     
     name = request.form.get("name")
     age = request.form.get("age")
-    
     member = LeagueMember(
         league_id=league_id,
         user_id=session['user_id'],
@@ -2479,7 +2371,6 @@ def add_member(league_id):
     )
     db.session.add(member)
     db.session.commit()
-    
     flash(f"Membro '{name}' aggiunto alla lega", "success")
     return redirect(url_for("league_detail", league_id=league_id))
 
@@ -2490,37 +2381,30 @@ def add_factor(league_id):
     
     league = League.query.get_or_404(league_id)
     if league.owner_id != session['user_id']:
-        return jsonify({"error": "Only owner can add factors"}), 403
-    
+        return jsonify({"error": "Solo gli admin possono aggiungere i fattori!"}), 403
     name = request.form.get("name")
     description = request.form.get("description")
     weight = request.form.get("weight", 1.0)
-    
-    # NUOVO: Estrai il sesso (gender) dal form
-    gender = request.form.get("gender", "Entrambi")  # Default: visibile a entrambi
+    gender = request.form.get("gender", "Entrambi")  
     
     factor = Factor(
         league_id=league_id,
         name=name,
         description=description,
         weight=float(weight),
-        gender=gender  # AGGIUNGI QUESTO
+        gender=gender 
     )
     db.session.add(factor)
     db.session.commit()
-    
     flash(f"Fattore '{name}' aggiunto (visibile a: {gender})", "success")
     return redirect(url_for("league_detail", league_id=league_id))
-    
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'avatars')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max
-
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -2577,7 +2461,7 @@ def vote(league_id):
         flash("Lega non trovata", "danger")
         return redirect(url_for("dashboard"))
     
-    # CONTROLLO BLACKLIST
+    
     is_blacklisted = BlacklistedMember.query.filter_by(
         league_id=league_id,
         user_id=session['user_id']
@@ -2587,7 +2471,7 @@ def vote(league_id):
         flash(f"Sei stato espulso dalla lega '{league.name}' e non puoi più votare", "danger")
         return redirect(url_for("dashboard"))
     
-    # CONTROLLO MEMBERSHIP
+
     is_member = LeagueMember.query.filter_by(
         league_id=league_id, 
         user_id=session['user_id']
@@ -2599,7 +2483,7 @@ def vote(league_id):
     
     members = LeagueMember.query.filter_by(league_id=league_id, is_competing=True).all()
     
-    # ===== FATTORI CUSTOM - FILTRATI PER SESSO =====
+  
     user_gender = User.query.get(session['user_id']).gender
     factors = Factor.query.filter_by(league_id=league_id).filter(
         db.or_(
@@ -2607,8 +2491,7 @@ def vote(league_id):
             Factor.gender == user_gender
         )
     ).all()
-    
-    # FATTORI STANDARD ATTIVATI
+
     active_links = LeagueFactor.query.filter_by(league_id=league_id, is_active=True).all()
     active_standard_factor_ids = {link.standard_factor_id for link in active_links}
     active_standard_factors = StandardFactor.query.filter(StandardFactor.id.in_(active_standard_factor_ids)).all() if active_standard_factor_ids else []
@@ -2616,26 +2499,17 @@ def vote(league_id):
     if request.method == "POST":
         try:
             for member in members:
-                # Evita l'autovoto
                 if member.user_id == session['user_id']:
-                    continue
-                
-                # NUOVO: Ottieni il marriage_score del membro votato come BASE
+                    continue               
                 user_voted = User.query.get(member.user_id)
                 base_score = user_voted.marriage_score if user_voted else 0
-                
-                # Calcola il punteggio totale per questo membro
                 member_total_score = base_score
-                
-                # VOTA I FATTORI CUSTOM
                 for factor in factors:
                     score_key = f"score_{member.id}_{factor.id}"
                     score = request.form.get(score_key)
                     
                     if score:
                         score_value = float(score)
-                        
-                        # Controlla se il voto per questo factor esiste già
                         existing_vote = FactorVote.query.filter_by(
                             factor_id=factor.id,
                             member_id=member.id,
@@ -2643,10 +2517,7 @@ def vote(league_id):
                         ).first()
                         
                         if not existing_vote:
-                            # Aggiungi il voto al punteggio totale
                             member_total_score += score_value
-                            
-                            # Salva il singolo voto
                             new_vote = FactorVote(
                                 factor_id=factor.id,
                                 member_id=member.id,
@@ -2654,11 +2525,7 @@ def vote(league_id):
                                 score=score_value
                             )
                             db.session.add(new_vote)
-                
-                # Assicurati che il punteggio non sia negativo
                 member_total_score = max(0, member_total_score)
-                
-                # Aggiorna il punteggio totale del membro nella lega
                 member.total_score = int(member_total_score)
             
             db.session.commit()
@@ -2669,15 +2536,10 @@ def vote(league_id):
             flash(f"Errore durante la registrazione dei voti: {str(e)}", "danger")
         
         return redirect(url_for("league_detail", league_id=league_id))
-
-    # Carica i voti già fatti
+    
     existing_votes = FactorVote.query.filter_by(voter_id=session['user_id']).all()
     voted_pairs = set((vote.member_id, vote.factor_id) for vote in existing_votes)
-    
-    # Escludi l'utente loggato dalla visualizzazione
     filtered_members = [m for m in members if m.user_id != session['user_id']]
-    
-    # NUOVO: Passa il marriage_score di ogni membro al template
     member_scores = {}
     for member in filtered_members:
         user = User.query.get(member.user_id)

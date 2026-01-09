@@ -1,4 +1,4 @@
-# seed_factors.py
+
 """
 Script per popolare il database con i fattori standard di FantaMatrimonio.
 ATTENZIONE: Cancella TUTTI i fattori standard vecchi e li sostituisce con i nuovi!
@@ -81,56 +81,41 @@ standard_factors_data = [
 
 
 def seed():
-    """
-    Popola il database con i fattori standard NUOVI.
-    ⚠️ CANCELLA TUTTI I FATTORI STANDARD VECCHI!
-    """
+    
     with app.app_context():
         try:
-            print("\n" + "="*70)
-            print("  SEEDING FATTORI STANDARD DI FANTAMATRIMONIO")
-            print("  ⚠️ ATTENZIONE: VERRANNO CANCELLATI TUTTI I FATTORI VECCHI!")
-            print("="*70)
-            
-            # ===== FASE 0: CANCELLAZIONE FATTORI VECCHI =====
             print("\n[FASE 0] Cancellazione fattori standard vecchi...")
             old_factors_count = StandardFactor.query.count()
             
             if old_factors_count > 0:
-                # Cancella TUTTI i fattori standard
                 num_deleted = db.session.query(StandardFactor).delete()
                 db.session.commit()
-                print(f"  ✗ Cancellati {num_deleted} fattori standard vecchi")
+                print(f"Cancellati {num_deleted} fattori standard vecchi")
             else:
-                print("  ℹ Nessun fattore vecchio da cancellare")
-            
-            # ===== FASE 1: CREAZIONE FATTORI NUOVI =====
-            print("\n[FASE 1] Creazione fattori standard NUOVI...")
+                print("Nessun fattore vecchio da cancellare")
+            print("\nCreazione fattori standard NUOVI...")
             created_count = 0
             
             for factor_data in standard_factors_data:
                 factor = StandardFactor(**factor_data)
                 db.session.add(factor)
                 created_count += 1
-                print(f"  ✓ CREATO: {factor_data['name']:<40} (peso: {factor_data['default_weight']:+3})")
+                print(f"CREATO: {factor_data['name']:<40} (peso: {factor_data['default_weight']:+3})")
             
             db.session.commit()
-            print(f"\n  Risultato: {created_count} fattori creati")
+            print(f"\nRisultato: {created_count} fattori creati")
             
-            # ===== FASE 2: RICREAZIONE LINK LEAGUE_FACTOR =====
-            print("\n[FASE 2] Ricreazione link league_factor...")
+           
+            print("\nRicreazione link league_factor...")
             all_leagues = League.query.all()
             
             if not all_leagues:
-                print("  ⚠ ATTENZIONE: Non ci sono leghe nel database!")
-                print("  I link league_factor verranno creati quando creerai le leghe.")
+                print("ATTENZIONE: Non ci sono leghe nel database!")
+                print("I link league_factor verranno creati quando creerai le leghe.")
             else:
-                # Cancella i vecchi link
                 num_deleted = db.session.query(LeagueFactor).delete()
                 db.session.commit()
-                print(f"  ✗ Cancellati {num_deleted} vecchi link league_factor")
-                
-                # Ricrea i link
+                print(f"Cancellati {num_deleted} vecchi link league_factor")
                 all_factors = StandardFactor.query.all()
                 links_created = 0
                 
@@ -145,23 +130,12 @@ def seed():
                         links_created += 1
                 
                 db.session.commit()
-                print(f"  ✓ Creati {links_created} link league_factor")
-                print(f"  ✓ Coinvolte {len(all_leagues)} lega/leghe")
+                print(f"Creati {links_created} link league_factor")
+                print(f"Coinvolte {len(all_leagues)} lega/leghe")
             
-            print("\n" + "="*70)
-            print("  ✓ SEEDING COMPLETATO CON SUCCESSO!")
-            print("="*70)
-            print("\nSTATO ATTUALE:")
+            
             print(f"  • Fattori standard nel DB: {StandardFactor.query.count()}")
-            print(f"  • Link league_factor nel DB: {LeagueFactor.query.count()}")
-            print("\nPROSSIMI STEP:")
-            print("1. Avvia il server: python app.py")
-            print("2. Accedi come admin di una lega")
-            print("3. Vai in 'Fattori di Valutazione'")
-            print("4. Attiva gli switch per i fattori che vuoi votare")
-            print("5. Accedi come membro e vota!")
-            print("="*70 + "\n")
-            
+            print(f"  • Link league_factor nel DB: {LeagueFactor.query.count()}")            
         except Exception as e:
             db.session.rollback()
             print(f"\n--- ERRORE DURANTE IL SEEDING ---")

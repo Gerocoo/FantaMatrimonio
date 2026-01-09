@@ -1,9 +1,6 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard - FantaMatrimonio{% endblock %}
 {% block content %}
-
-<!-- Welcome Card -->
 <div style="max-width: 700px; margin: 3rem auto; padding: 0 1.5rem;">
   <div class="card" style="text-align: center;">
     <h2 style="margin-bottom: 1rem;">Ciao, {{ user.username }}!</h2>
@@ -22,8 +19,6 @@
     </div>
   </div>
 </div>
-
-<!-- Le Mie Leghe Section -->
  {% if owned_leagues %}
   <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 3rem 0 1.5rem 0; color: var(--foreground); text-align: center;">
     Le mie Leghe
@@ -54,8 +49,6 @@
     {% endfor %}
   </div>
   {% endif %}
-
-  <!-- Leghe a cui partecipi -->
   {% if joined_leagues %}
   <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin: 3rem 0 1.5rem 0; color: var(--foreground); text-align: center;">
     Leghe a cui Partecipi
@@ -86,8 +79,6 @@
     {% endfor %}
   </div>
   {% endif %}
-
-  <!-- Nessuna lega -->
   {% if not owned_leagues and not joined_leagues %}
   <div style="text-align: center; padding: 4rem 2rem;">
     <svg style="width: 80px; height: 80px; fill: var(--muted); margin-bottom: 1.5rem; opacity: 0.5;" viewBox="0 0 24 24">
@@ -102,18 +93,13 @@
   {% endif %}
 </main>
 <script>
-  // Controlla se c'è un messaggio di espulsione
   const kickedMessage = sessionStorage.getItem('kicked_message');
   if (kickedMessage) {
-    // Mostra il flash message
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-danger';
     alertDiv.textContent = kickedMessage;
     document.body.insertBefore(alertDiv, document.body.firstChild);
-    
-    // Pulisci sessionStorage
     sessionStorage.removeItem('kicked_message');
   }
 </script>
-
 {% endblock %}

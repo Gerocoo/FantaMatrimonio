@@ -16,7 +16,7 @@
   {% else %}
     <form method="post" class="voting-form">
       
-      <!-- FATTORI STANDARD (ATTIVATI) -->
+    
       {% if active_standard_factors %}
         <h2 style="text-align: center; font-family: 'Dancing Script', cursive; color: #B752B9; margin: 2rem 0 1rem;">Fattori Standard</h2>
         {% for factor in active_standard_factors %}
@@ -29,7 +29,6 @@
               {{ factor.description or 'Nessuna descrizione' }}
             </p>
 
-            <!-- Slider -->
             <div class="members-slider-container">
               <div class="members-slider" id="slider_std_{{ factor.id }}">
                 {% for member in members %}
@@ -57,7 +56,6 @@
                 {% endfor %}
               </div>
               
-              <!-- Indicatori di scroll -->
               <div class="scroll-indicators" id="indicators_std_{{ factor.id }}">
                 {% for member in members %}
                   <span class="scroll-dot"></span>
@@ -68,7 +66,7 @@
         {% endfor %}
       {% endif %}
 
-      <!-- FATTORI CUSTOM -->
+      
       {% if factors %}
         <h2 style="text-align: center; font-family: 'Dancing Script', cursive; color: #B752B9; margin: 2rem 0 1rem;">Fattori Custom</h2>
         {% for factor in factors %}
@@ -81,7 +79,7 @@
               {{ factor.description or 'Nessuna descrizione' }}
             </p>
 
-            <!-- Slider -->
+            
             <div class="members-slider-container">
               <div class="members-slider" id="slider_{{ factor.id }}">
                 {% for member in members %}
@@ -120,7 +118,7 @@
                 {% endfor %}
               </div>
               
-              <!-- Indicatori di scroll -->
+              
               <div class="scroll-indicators" id="indicators_{{ factor.id }}">
                 {% for member in members %}
                   <span class="scroll-dot"></span>
@@ -131,7 +129,7 @@
         {% endfor %}
       {% endif %}
 
-      <!-- Se non ci sono né fattori standard né custom -->
+      
       {% if not active_standard_factors and not factors %}
         <div class="card" style="text-align: center;">
           <p style="color: #B752B9; font-weight: bold;">❌ Nessun fattore da votare</p>

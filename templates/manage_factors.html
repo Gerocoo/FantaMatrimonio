@@ -1,6 +1,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Funzione di Ricerca ---
+
     const searchInput = document.getElementById('factorSearch');
     const factorCards = document.querySelectorAll('.factor-card');
 
@@ -21,10 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Funzione di Toggle ---
+   
     const toggles = document.querySelectorAll('.factor-toggle');
     
-    // CORREZIONE QUI: Metti l'ID della lega in una variabile JS valida
+
     const leagueId = "{{ league.id }}"; 
 
     toggles.forEach(toggle => {
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const factorId = this.dataset.factorId;
             const isChecked = this.checked;
             
-            // Usa la variabile definita sopra
+            
             fetch(`/league/${leagueId}/toggle_factor/${factorId}`, {
                 method: 'POST',
                 headers: {

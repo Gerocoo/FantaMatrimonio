@@ -19,9 +19,7 @@
 
     <form method="POST" action="{{ url_for('questionnaire') }}">
       
-      <!-- 1-11: Altri campi rimangono uguali -->
       
-      <!-- 1. SESSO -->
       <div class="form-group">
         <label for="gender">1. Genere</label>
         <select id="gender" name="gender" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -32,13 +30,13 @@
         </select>
       </div>
 
-      <!-- 2. ETA' -->
+      
       <div class="form-group">
         <label for="age">2. Quanti anni hai?</label>
         <input type="number" name="age" id="age" min="18" max="99" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
       </div>
 
-      <!-- 3. IMPIEGO -->
+      
       <div class="form-group">
         <label for="employment_status">3. Qual è la tua situazione lavorativa?</label>
         <select name="employment_status" id="employment_status" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -52,20 +50,20 @@
         </select>
       </div>
 
-      <!-- 4. RELAZIONE PIU' LUNGA -->
+      
       <div class="form-group">
         <label for="longest_relationship">4. Quanto è durata la tua relazione più lunga? (in mesi)</label>
         <input type="number" name="longest_relationship" id="longest_relationship" min="0" max="600" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
         <small style="color: #999; display: block; margin-top: 0.5rem;">Se non hai mai avuto una relazione, inserisci 0</small>
       </div>
 
-      <!-- 5. NUMERO DI RELAZIONI -->
+      
       <div class="form-group">
         <label for="num_relationships">5. Quante relazioni serie hai avuto nella tua vita?</label>
         <input type="number" name="num_relationships" id="num_relationships" min="0" max="50" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
       </div>
 
-      <!-- 6. STATO ATTUALE -->
+    
       <div class="form-group">
         <label for="current_status">6. Qual è il tuo stato sentimentale attuale?</label>
         <select name="current_status" id="current_status" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -79,7 +77,7 @@
         </select>
       </div>
 
-      <!-- 7. HA MAI TRADITO -->
+    
       <div class="form-group">
         <label>7. Hai mai tradito in una relazione passata?</label>
         <select name="has_cheated" id="has_cheated" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -89,7 +87,7 @@
         </select>
       </div>
 
-      <!-- 8. TRADIRESTI -->
+     
       <div class="form-group">
         <label for="would_cheat">8. Tradiresti il/la tuo/a partner?</label>
         <select name="would_cheat" id="would_cheat" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -100,7 +98,7 @@
         </select>
       </div>
 
-      <!-- 9. IDEA MATRIMONIO -->
+     
       <div class="form-group">
         <label for="marriage_idea">9. Cosa pensi del matrimonio?</label>
         <select name="marriage_idea" id="marriage_idea" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -112,7 +110,7 @@
         </select>
       </div>
 
-      <!-- 10. VUOI FIGLI -->
+      
       <div class="form-group">
         <label for="wants_children">10. Quanti figli vorresti avere?</label>
         <select name="wants_children" id="wants_children" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -126,7 +124,7 @@
         </select>
       </div>
 
-      <!-- 11. CONVIVENZA -->
+    
       <div class="form-group">
         <label for="living_together">11. Sei favorevole alla convivenza prima del matrimonio?</label>
         <select name="living_together" id="living_together" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; cursor: pointer;">
@@ -137,7 +135,7 @@
         </select>
       </div>
 
-      <!-- 12. LIVELLO DI IMPEGNO - SLIDER ROSA CORRETTO -->
+      
       <div class="form-group">
         <label for="commitment_level">12. Quanto sei pronto/a per un impegno serio?</label>
         <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
@@ -155,7 +153,7 @@
         </div>
       </div>
 
-      <!-- BOTTONE SUBMIT -->
+    
       <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem; padding: 1rem; font-size: 1.1rem;">
          Completa Questionario 
       </button>

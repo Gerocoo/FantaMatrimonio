@@ -1,38 +1,23 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000">
   <title>{% block title %}FantaMatrimonio{% endblock %}</title>
   <meta name="description" content="FantaMatrimonio - Il gioco di scommesse più divertente e goliardico che mette alla prova la conoscenza dei vostri amici (e di voi stessi!)">
-  
-  <!-- Favicon e Icons -->
   <link rel="icon" href="{{ url_for('static', filename='logo-192x192.png') }}" type="image/png">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo-192x192.png') }}">
-  
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-  
-  <!-- CSS -->
- <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}?v={{ cache_bust }}">
-
-  
-  <!-- PWA Manifest -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet"
+  <link rel="stylesheet" href="{{ url_for('static', filename='fanta.css') }}?v={{ cache_bust }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    
-    <meta name="theme-color" content="#ff69b4">
-
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+  <meta name="theme-color" content="#ff69b4">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
-
 <body>
   <nav class="navbar">
   <a href="{{ url_for('home') }}" class="brand-logo">FantaMatrimonio</a>
-  
   {% if session.get('user_id') %}
     <div class="dropdown">
       <div id="profileDropdown" onclick="toggleDropdown();return false;" style="cursor: pointer;">
@@ -85,7 +70,6 @@
     </div>
   {% endif %}
 </nav>
-  <!-- Custom Notification Prompt -->
 <div id="custom-notification-prompt" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; max-width: 400px;">
   <div style="background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); overflow: hidden;">
     <div style="background: linear-gradient(135deg, #ff5ace 0%, #ffa3d7 100%); padding: 20px; text-align: center;">
@@ -107,13 +91,9 @@
       {% endfor %}
     {% endif %}
   {% endwith %}
-
- 
   {% block content %}
   {% endblock %}
-
-  
-  <footer style="background: var(--card); border-top: 1px solid var(--border); padding: 2rem; text-align: center; margin-top: 4rem;">
+<footer style="background: var(--card); border-top: 1px solid var(--border); padding: 2rem; text-align: center; margin-top: 4rem;">
   <p style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">
     FantaMatrimonio
   </p>
@@ -174,7 +154,7 @@ function handleCredentialResponse(response) {
 }
 
 window.onload = function () {
-    // Controlla che la libreria Google sia caricata
+ 
     if (typeof google === 'undefined') {
         console.error("Libreria Google non caricata!");
         return;
@@ -188,7 +168,7 @@ window.onload = function () {
             cancel_on_tap_outside: true
         });
 
-        // Renderizza il bottone solo se l'elemento esiste nella pagina
+       
         const btnDiv = document.getElementById("googleSignInDiv");
         if (btnDiv) {
             google.accounts.id.renderButton(
@@ -214,19 +194,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const denyBtn = document.getElementById('deny-notifications');
 
   function showCustomPrompt() {
-    // Mostra il nostro popup solo se i permessi sono 'default'
+    
     if (Notification.permission === 'default') {
       customPrompt.style.display = 'block';
     }
   }
-
-  // Fai apparire la nostra card dopo 5 secondi
   setTimeout(showCustomPrompt, 5000);
-
-  // Se l'utente clicca "Sì, attiva!"
   acceptBtn.addEventListener('click', function() {
     customPrompt.style.display = 'none';
-    // ...e SOLO ORA mostriamo il popup del browser
     Notification.requestPermission().then(function(permission) {
       if (permission === 'granted') {
         Swal.fire('Perfetto!', 'Notifiche attivate con successo.', 'success');
@@ -236,7 +211,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Se l'utente clicca "No, grazie"
   denyBtn.addEventListener('click', function() {
     customPrompt.style.display = 'none';
   });
@@ -252,7 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(err => console.error("Errore nel Service Worker:", err));
     });
   }
-// CHIAVE PUBBLICA BASE64 URL-SAFE
 const VAPID_PUBLIC_KEY = 'BP9QxREsdRAIYSV-2xNoB_Vv1A1D14pr4eunMurhCqm2ZEsYjDcZ-XjSIEStLVSIDI06VIkAdxPYENx_HMCy8yQ';
 
 function urlBase64ToUint8Array(base64String) {
@@ -272,7 +245,7 @@ function urlBase64ToUint8Array(base64String) {
 
 async function subscribeUserToPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.log('❌ Push notifications non supportate');
+    console.log('Notifications Push non supportate');
     return;
   }
 
@@ -281,7 +254,7 @@ async function subscribeUserToPush() {
     
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      console.log('❌ Permesso notifiche negato');
+      console.log('Permesso notifiche negato');
       return;
     }
 
@@ -290,7 +263,7 @@ async function subscribeUserToPush() {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
 
-    // Invia subscription al server
+    
     const response = await fetch('/api/push-subscription', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -300,14 +273,14 @@ async function subscribeUserToPush() {
     if (response.ok) {
       console.log('✅ Subscription salvata con successo');
     } else {
-      console.error('❌ Errore salvataggio subscription');
+      console.error('Errore salvataggio subscription');
     }
   } catch (error) {
-    console.error('❌ Errore subscription:', error);
+    console.error('Errore subscription:', error);
   }
 }
 
-// Esegui dopo un delay
+
 if ('serviceWorker' in navigator) {
   setTimeout(() => {
     subscribeUserToPush();

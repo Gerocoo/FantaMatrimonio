@@ -9,7 +9,7 @@
   <p class="created-date">Creata il {{ league.created_at.strftime('%d/%m/%Y') }}</p>
   
 {% if voting and voting.end_time > now %}
-<!-- TIMELINE PERCORSO GARA -->
+
 <div style="margin: 2rem auto; max-width: 900px; padding: 2rem; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border: 2px solid #E145A3; border-radius: 12px;">
   <h3 style="color: #E145A3; font-family: 'Dancing Script', cursive; font-size: 1.6rem; margin: 0 0 1rem 0; text-align: center;">✓ Votazione in Corso</h3>
   
@@ -21,7 +21,6 @@
     <div id="countdownDisplay" style="font-size: 1.8rem; font-weight: 700; color: #E145A3; font-family: 'Courier New', monospace; letter-spacing: 1px;">00:00:00:00</div>
   </div>
   
-  <!-- PERCORSO GARA -->
   <div style="position: relative; margin: 2rem 0; padding: 1rem 1rem 0.5rem 1rem;">
     <div style="position: absolute; top: 85%; left: 60px; right: 60px; height: 4px; background: linear-gradient(to right, #fdadf0, #E145A3, #f44336); z-index: 1;"></div>
     
@@ -35,7 +34,6 @@
       <p style="font-size: 0.7rem; color: #333; font-weight: 600; margin: 0;">FINISH</p>
     </div>
     
-    <!-- CONTAINER AVATAR -->
     <div style="position: relative; height: 200px; margin: 0 60px;">
       {% if members %}
         {% for member in members %}
@@ -56,7 +54,6 @@
       {% endif %}
     </div>
     
-    <!-- CONTAINER NOMI -->
     <div style="position: absolute; top: 75%; left: 60px; right: 60px; height: 0; z-index: 2;">
       {% if members %}
         {% for member in members %}
@@ -67,7 +64,7 @@
       {% endif %}
     </div>
     
-    <!-- CONTAINER LINEE -->
+  
     <div style="position: absolute; top: -60px; left: 60px; right: 60px; height: 300px; z-index: 0; pointer-events: none;">
       {% if members %}
         {% for member in members %}
@@ -78,7 +75,7 @@
       {% endif %}
     </div>
     
-    <!-- CONTAINER PUNTEGGI -->
+   
     <div style="position: absolute; top: 85%; left: 60px; right: 60px; height: 0; z-index: 2;">
       {% if members %}
         {% for member in members %}
@@ -191,17 +188,17 @@ function updateVotingTimeline() {
 if (lineSvg) {
   lineSvg.style.left = finalPosition+ 2.4 + '%';
   
-  // Calcola l'altezza della linea dinamicamente
+ 
   let lineHeight = 0;
   let lineTop = 0;
   
   if (currentPosition === 'high') {
-    // Avatar è in alto (-30px), linea PIÙ LUNGA
-    lineHeight = 270;  // Da avatar (50px) fino a punteggio (220px total)
-    lineTop = avatarTopHigh - 10;  // Inizia sopra l'avatar
+   
+    lineHeight = 270; 
+    lineTop = avatarTopHigh - 10;
   } else {
-    // Avatar è normale (20px), linea standard
-    lineHeight = 190;  // Più corta
+    
+    lineHeight = 190; 
     lineTop = avatarTopNormal - 10;
   }
   
@@ -394,8 +391,7 @@ function startNewVoting(leagueId) {
 {% endif %}
 
 <div id="chat-container">
-  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
-    💬
+  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">💬
     <span id="chat-badge" style="display: none; background: rgb(219, 7, 95); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; position: absolute; top: -5px; right: -5px;">0</span>
   </button>
   
@@ -983,7 +979,6 @@ fetch('/league/' + leagueCode + '/chat')
 updateButtonsVisibility();
 
 function generateMemberButtons() {
-  // Escludi avatar dalla timeline
   const memberElements = document.querySelectorAll('[data-member-id]:not(.avatar-circle):not(.racing-avatar)');
   
   const membersList = document.getElementById('membersButtonsList');
@@ -993,8 +988,7 @@ function generateMemberButtons() {
     const memberId = el.getAttribute('data-member-id');
     const memberName = el.getAttribute('data-member-name');
     const color = el.getAttribute('data-color');
-    
-    // Controllo sicurezza
+
     if (memberName && memberName.trim() !== '') {
       const button = document.createElement('button');
       button.type = 'button';

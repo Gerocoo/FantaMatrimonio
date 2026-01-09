@@ -46,7 +46,7 @@ document.querySelectorAll('.btn-join').forEach(btn => {
   {% endif %}
 </main>
 
-<!-- Popup per entrare nella lega -->
+
 <div id="joinPopupOverlay" class="popup-overlay" style="display: none;" onclick="closeJoinPopup()">
   <div class="popup-container" onclick="event.stopPropagation()">
     <button class="popup-close" onclick="closeJoinPopup()">&times;</button>
@@ -105,7 +105,7 @@ function closeJoinPopup() {
   document.getElementById('leaguePassword').value = '';
 }
 
-// Chiudi il popup premendo ESC
+
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape') {
     closeJoinPopup();

@@ -1,14 +1,8 @@
-<!-- templates/partials/chat_panel.html -->
-
-<!-- Hidden fields necessari per la chat -->
 <input type="hidden" id="leagueId" value="{{ league.id }}">
 <input type="hidden" id="currentUserId" value="{{ session.get('user_id') }}">
 <input type="hidden" id="leagueCode" value="{{ league.code }}">
-
-<!-- CHAT CONTAINER -->
 <div id="chat-container">
-  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">
-    💬
+  <button id="toggle-chat" class="floating-chat-btn" title="Apri chat" style="position: relative;">💬
     <span id="chat-badge" style="display: none; background: rgb(219, 7, 95); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; position: absolute; top: -5px; right: -5px;">0</span>
   </button>
   
@@ -40,7 +34,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Selezioni DOM
     const leagueCode = document.getElementById("leagueCode").value;
     const chatMessages = document.getElementById("chat-messages");
     const chatForm = document.getElementById("chat-form");
@@ -55,8 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastSeenMessageId = null;
     let unreadCount = 0;
     let selectedFiles = [];
-
-    // Mappa colori username -> colore (popolata dinamicamente)
     const memberColors = {};
     document.querySelectorAll('.ranking-card[data-member-name][data-color]').forEach(el => {
         const username = el.getAttribute('data-member-name');
@@ -98,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.addEventListener('change', () => {
             selectedFiles = Array.from(fileInput.files || []);
             updateButtonsVisibility();
-            // Aggiungi preview se vuoi
         });
     }
 
@@ -212,17 +202,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
-
-    // Polling
     setInterval(() => {
         if(!chatFloat || chatFloat.style.display === "none" || chatFloat.style.display === "") {
             checkNewMessages();
         } else {
-            loadMessages(); // Ricarica se la chat è aperta
+            loadMessages(); 
         }
     }, 4000);
 
-    // Caricamento iniziale per lastSeenMessageId
     fetch(`/league/${leagueCode}/chat`)
         .then(res => res.json())
         .then(messages => {
