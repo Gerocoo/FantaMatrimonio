@@ -464,7 +464,7 @@ def setup_default_factors(league_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Errore in setup_default_factors: {str(e)}")
+        print(f"Errore in setup_default_factors: {str(e)}")
         import traceback
         traceback.print_exc()
 
@@ -1478,7 +1478,7 @@ def register():
                 html=confirmation_html_template.format(username=username, confirm_url=link),
                 category="register"
             )
-            client = MailtrapClient(token="616b82792c3fd1696348a9d3f3ff382b")
+            client = MailtrapClient(token=os.getenv('MAILTRAP_TOKEN'))
             response = client.send(mail)
             print(response)
             db.session.add(user)
