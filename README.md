@@ -2,7 +2,8 @@ Fantamatrimonio
 Il gioco di scommesse più divertente e goliardico per prevedere chi sarà il prossimo a sposarsi tra i tuoi amici!
 
 What is Fantamatrimonio?
-Fantamatrimonio is a playful prediction game where you compete with friends to guess who will get married next. Inspired by FantaSanremo, this web application lets you create leagues, bet on your friends' relationship outcomes, and track predictions in real-time.
+Fantamatrimonio is a playful prediction game where you compete with friends to guess who will get married next. Inspired by FantaSanremo, this web application lets you create leagues, 
+bet on your friends' relationship outcomes, and track predictions in real-time.
 ​
 Core Concept:
 Select friends you think will get married soon
