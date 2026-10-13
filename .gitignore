@@ -57,3 +57,5 @@ Thumbs.db
 instance/
 static/uploads/
 .env
+
+*.pem
