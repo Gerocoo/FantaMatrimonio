@@ -53,3 +53,7 @@ build/
 ehthumbs.db
 Thumbs.db
 .env
+
+instance/
+static/uploads/
+.env
